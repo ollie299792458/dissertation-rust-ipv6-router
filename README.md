@@ -1,2 +1,3 @@
-# dissertation-rust-ipv6-router
-Software IPv6 Router in Rust for Mininet
+#Software IPv6 Router in Rust using Mininet for Universtiy of Cambridge Part II (3rd Year) Dissertation
+
+
