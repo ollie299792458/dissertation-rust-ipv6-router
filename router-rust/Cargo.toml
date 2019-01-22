@@ -1,0 +1,6 @@
+[package]
+name = "router-rust"
+version = "0.1.0"
+authors = ["Oliver Black <oliver.black.uk@gmail.com>"]
+
+[dependencies]
