@@ -50,9 +50,7 @@ def run():
     net.start()
 
     node.cmdPrint("ifconfig")
-    node.cmdPrint("ping6 -w 2 -I " + node.name + "-eth0 " + ipv6_addresses[node2.name])
-    node2.cmdPrint("ping6 -w 2 -I " + node2.name + "-eth0 " + ipv6_addresses[node.name])
-    node.cmdPrint("ping6 -w 2 -I " + node.name + "-eth0 " + ipv6_addresses[node2.name])
+    node.cmdPrint("ping6 -W 2 -I " + node.name + "-eth0 " + ipv6_addresses[node2.name])
     node.cmdPrint("route -6 -n")
     node.cmdPrint("ip -6 neighbor show")
     info('Example test completed\n')
