@@ -6,9 +6,13 @@ case $1 in
         fuser -k 6633/tcp
         ;;
     -6ex)
-        python -E test-python/research-ipv6-example.py
+        python -E test_python/research_ipv6_example.py
+        ;;
+    -v)
+        python --version
+        mn --version
         ;;
     *)
-        python -E test-python/test-example.py
+        python -m test_python.test_example
         ;;
 esac
