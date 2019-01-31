@@ -17,16 +17,19 @@ def run():
     test.start()
     info('Example test starting\n')
 
-    node = test.get('h1')
-    node2 = test.get('h2')
+    host = test.get('h1')
+    host2 = test.get('h2')
 
-    node.cmdPrint("ifconfig")
-    node.cmdPrint("ping6 -w 2 -I " + str(node) + "-eth0 " + self.address(str(node2)))
+    host.cmdPrint("ifconfig")
+    host2.cmdPrint("ifconfig")
+    host.cmdPrint("ping6 -c 1 -I " + str(host) + "-eth0 " + test.address(str(host2)))
     test.ping()
-    node.cmdPrint("route -6 -n")
-    node.cmdPrint("ip -6 neighbor show")
+    test.ping6()
+    test.ping()
+    host.cmdPrint("route -6 -n")
+    host.cmdPrint("ip -6 neighbor show")
     info('Example test completed\n')
-    net.stop()
+    test.stop()
 
 
 if __name__ == '__main__':

@@ -10,14 +10,12 @@ class TestFramework(Mininet):
 
     def __init__(self, topo=None, switch=OVSKernelSwitch, host=Host,
                  controller=DefaultController, link=Link, intf=Intf,
-                 build=True, xterms=False, cleanup=False, ipBase='10.0.0.0/8',
+                 build=False, xterms=False, cleanup=False, ipBase='10.0.0.0/8',
                  inNamespace=False,
                  autoSetMacs=False, autoStaticArp=False, autoPinCpus=False,
                  listenPort=None, waitConnected=False):
         self.__host_to_address = {}
         self.__address_to_host = {}
-        self.__host_names = []
-        self.__switch_names = []
         self.__count = 0
         super(TestFramework, self).__init__(topo, switch, host,
                                             controller, link, intf,
@@ -34,7 +32,7 @@ class TestFramework(Mininet):
         count = self.__incCount()
         # maybe get address from node rather than allocating a new one; done for parsing, visual debug, & compatibility
         address = "fc00::" + str(count)
-        name = str(node)
+        name = node.name
         # add address to interface
         node.cmd("ifconfig " + name + "-eth0 inet6 add " + address + "/64")
         # add addresses to lookup maps
@@ -42,31 +40,26 @@ class TestFramework(Mininet):
         self.__address_to_host[address] = name
         return address
 
+    # may return stale addresses if hosts are removed TODO
     def address(self, name):
         return self.__host_to_address[name]
 
     def name(self, address):
         return self.__address_to_host[address]
 
-    def addHost(self, name, **opts):
-        self.__host_names.append(name)
-        node = super(TestFramework, self).addHost(name, **opts)
-        address = self.__add_ipv6_address(node)
-        info("Given IPv6 address:"+address+" to node"+str(node))
-        return node
-
-    def addSwitch(self, name, **opts):
-        self.__switch_names.append(name)
-        switch = super(TestFramework, self).addSwitch('s3', **opts)
-        # do we actually need this? TODO
-        switch.cmd("sysctl net.ipv6.conf.all.disable_ipv6=0")
-        return switch
-
     def start(self):
-        info("Thank you for using Oliver's Mininet Test Framework")
+        info("Thank you for using Oliver's Mininet Test Framework\n")
+        for host in self.hosts :
+            address = self.__add_ipv6_address(host)
+            info("Given IPv6 address: "+address+" to node: "+host.name+"\n")
+
+        # do we actually need this? TODO
+        for switch in self.switches :
+            switch.cmd("sysctl net.ipv6.conf.all.disable_ipv6=0")
+
         return super(TestFramework, self).start()
 
-    def ping( self, hosts=None, timeout=None ):
+    def ping6( self, hosts=None, timeout=None ):
         """Ping between all specified hosts.
            hosts: list of hosts
            timeout: time to wait for a response, as string
@@ -77,7 +70,7 @@ class TestFramework(Mininet):
         ploss = None
         if not hosts:
             hosts = self.hosts
-            output( '*** Ping: testing ping reachability\n' )
+            output( '*** Ping6: testing ping reachability\n' )
         for node in hosts:
             output( '%s -> ' % node.name )
             for dest in hosts:
