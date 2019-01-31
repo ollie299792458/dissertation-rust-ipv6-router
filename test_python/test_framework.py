@@ -1,27 +1,40 @@
+from mininet.link import Intf, Link
+from mininet.log import info, error, output
 from mininet.net import Mininet
+from mininet.node import OVSKernelSwitch, Host, DefaultController
 from mininet.topo import Topo
 
 
 # To use: extend and implement build(self) method
-class TestFramework(Topo):
+class TestFramework(Mininet):
 
-    def __init__(self, *args, **params):
-        self.__net = None
-        self.__host_to_address = None
-        self.__address_to_host = None
+    def __init__(self, topo=None, switch=OVSKernelSwitch, host=Host,
+                 controller=DefaultController, link=Link, intf=Intf,
+                 build=True, xterms=False, cleanup=False, ipBase='10.0.0.0/8',
+                 inNamespace=False,
+                 autoSetMacs=False, autoStaticArp=False, autoPinCpus=False,
+                 listenPort=None, waitConnected=False):
+        self.__host_to_address = {}
+        self.__address_to_host = {}
         self.__host_names = []
         self.__switch_names = []
         self.__count = 0
-        super(TestFramework, self).__init__(*args, **params)
+        super(TestFramework, self).__init__(topo, switch, host,
+                                            controller, link, intf,
+                                            build, xterms, cleanup, ipBase,
+                                            inNamespace,
+                                            autoSetMacs, autoStaticArp, autoPinCpus,
+                                            listenPort, waitConnected)
 
     def __incCount(self):
         self.__count += 1
         return self.__count
 
-    def __add_ipv6_address(self, node, name):
+    def __add_ipv6_address(self, node):
         count = self.__incCount()
-        # maybe get address from node rather than allocating a new one - but parsing and compatibility
+        # maybe get address from node rather than allocating a new one; done for parsing, visual debug, & compatibility
         address = "fc00::" + str(count)
+        name = str(node)
         # add address to interface
         node.cmd("ifconfig " + name + "-eth0 inet6 add " + address + "/64")
         # add addresses to lookup maps
@@ -38,32 +51,61 @@ class TestFramework(Topo):
     def addHost(self, name, **opts):
         self.__host_names.append(name)
         node = super(TestFramework, self).addHost(name, **opts)
+        address = self.__add_ipv6_address(node)
+        info("Given IPv6 address:"+address+" to node"+str(node))
         return node
 
     def addSwitch(self, name, **opts):
         self.__switch_names.append(name)
         switch = super(TestFramework, self).addSwitch('s3', **opts)
+        # do we actually need this? TODO
+        switch.cmd("sysctl net.ipv6.conf.all.disable_ipv6=0")
         return switch
 
-    def addLink(self, left, right, **opts):
-        return super(TestFramework, self).addLink(left, right, **opts)
+    def start(self):
+        info("Thank you for using Oliver's Mininet Test Framework")
+        return super(TestFramework, self).start()
 
-    def start(self, topo):
-        self.__net = Mininet(topo=topo)
-        self.__net.start()
-        for name in self.__host_names :
-            node = self.__net.getNodeByName(name)
-            self.__add_ipv6_address(node, name)
-        #do we actually need this?
-        for name in self.__switch_names :
-            switch = self.__net.getNodeByName(name)
-            switch.cmd("sysctl net.ipv6.conf.all.disable_ipv6=0")
-        return self.__net
-
-    def stop(self):
-        return self.__net.stop()
-
-    # check link is up between nodes
-    def pingLink(self, left_node, right_node):
-        left_node.cmdPrint("ping6 -W 3 -I " + left_node.name + "-eth0 " + self.address(right_node.name))
-        right_node.cmdPrint("ping6 -W 3 -I " + right_node.name + "-eth0 " + self.address(left_node.name))
+    def ping( self, hosts=None, timeout=None ):
+        """Ping between all specified hosts.
+           hosts: list of hosts
+           timeout: time to wait for a response, as string
+           returns: ploss packet loss percentage"""
+        # should we check if running?
+        packets = 0
+        lost = 0
+        ploss = None
+        if not hosts:
+            hosts = self.hosts
+            output( '*** Ping: testing ping reachability\n' )
+        for node in hosts:
+            output( '%s -> ' % node.name )
+            for dest in hosts:
+                if node != dest:
+                    opts = ''
+                    if timeout:
+                        opts = '-W %s' % timeout
+                    if dest.intfs:
+                        result = node.cmd( 'ping6 -c1 %s %s' %
+                                           (opts, self.address(str(node))) )
+                        sent, received = self._parsePing( result )
+                    else:
+                        sent, received = 0, 0
+                    packets += sent
+                    if received > sent:
+                        error( '*** Error: received too many packets' )
+                        error( '%s' % result )
+                        node.cmdPrint( 'route' )
+                        exit( 1 )
+                    lost += sent - received
+                    output( ( '%s ' % dest.name ) if received else 'X ' )
+            output( '\n' )
+        if packets > 0:
+            ploss = 100.0 * lost / packets
+            received = packets - lost
+            output( "*** Results: %i%% dropped (%d/%d received)\n" %
+                    ( ploss, received, packets ) )
+        else:
+            ploss = 0
+            output( "*** Warning: No packets sent\n" )
+        return ploss
