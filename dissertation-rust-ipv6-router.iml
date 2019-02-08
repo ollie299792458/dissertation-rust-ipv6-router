@@ -2,7 +2,13 @@
 <module type="PYTHON_MODULE" version="4">
   <component name="NewModuleRootManager" inherit-compiler-output="true">
     <exclude-output />
-    <content url="file://$MODULE_DIR$" />
+    <content url="file://$MODULE_DIR$">
+      <sourceFolder url="file://$MODULE_DIR$/router_rust/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/router_rust/examples" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/router_rust/tests" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/router_rust/benches" isTestSource="true" />
+      <excludeFolder url="file://$MODULE_DIR$/router_rust/target" />
+    </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>

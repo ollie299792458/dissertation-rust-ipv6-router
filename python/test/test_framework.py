@@ -53,7 +53,6 @@ class TestFramework(Mininet):
             address = self.__add_ipv6_address(host)
             info("Given IPv6 address: "+address+" to node: "+host.name+"\n")
 
-        # do we actually need this? TODO
         for switch in self.switches :
             switch.cmd("sysctl net.ipv6.conf.all.disable_ipv6=0")
 

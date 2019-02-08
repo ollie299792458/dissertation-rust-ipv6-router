@@ -2,7 +2,8 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/dissertation-rust-ipv6-router.iml" filepath="$PROJECT_DIR$/dissertation-rust-ipv6-router.iml" />
+      <module fileurl="file://$PROJECT_DIR$/rust/router/router.iml" filepath="$PROJECT_DIR$/rust/router/router.iml" />
+      <module fileurl="file://$PROJECT_DIR$/python/test/test.iml" filepath="$PROJECT_DIR$/python/test/test.iml" />
     </modules>
   </component>
 </project>

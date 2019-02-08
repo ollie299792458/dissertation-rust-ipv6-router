@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
+  <component name="CargoProjects">
+    <cargoProject FILE="$PROJECT_DIR$/router_rust/Cargo.toml" />
+    <cargoProject FILE="$PROJECT_DIR$/rust/router/Cargo.toml" />
+  </component>
   <component name="ProjectRootManager" version="2" languageLevel="JDK_1_3" project-jdk-name="Python 2.7" project-jdk-type="Python SDK">
     <output url="file://$PROJECT_DIR$/out" />
   </component>

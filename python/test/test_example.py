@@ -22,10 +22,10 @@ def run():
 
     host.cmdPrint("ifconfig")
     host2.cmdPrint("ifconfig")
-    host.cmdPrint("ping6 -c 1 -I " + str(host) + "-eth0 " + test.address(str(host2)))
-    test.ping()
+    host.cmdPrint("ping6 -W 10 -I " + str(host) + "-eth0 " + test.address(str(host2)))
     test.ping6()
     test.ping()
+    host.cmdPrint("ping6 -W 10 " + test.address(str(host2)))
     host.cmdPrint("route -6 -n")
     host.cmdPrint("ip -6 neighbor show")
     info('Example test completed\n')

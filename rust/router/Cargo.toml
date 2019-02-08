@@ -1,6 +1,8 @@
 [package]
-name = "router-rust"
-version = "0.1.0"
+name = "router"
+version = "0.0.1"
 authors = ["Oliver Black <oliver.black.uk@gmail.com>"]
 
 [dependencies]
+[dependencies.pnet]
+version = "0.21.0"
