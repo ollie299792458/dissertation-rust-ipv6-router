@@ -5,14 +5,14 @@ case $1 in
         mn -c
         fuser -k 6633/tcp
         ;;
-    -6ex) #try the example
-        python -E python/test/research_ipv6_example.py
-        ;;
     -v) #version
         python --version
         mn --version
         ;;
-    *) #placeholder - break out tests
+    tw_ex) #try the taiwanese example
+        python -E python/test/research_ipv6_example.py
+        ;;
+    ex) #placeholder - break out tests
         python -m python.test.test_example
         ;;
 esac

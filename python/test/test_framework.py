@@ -49,14 +49,17 @@ class TestFramework(Mininet):
 
     def start(self):
         info("Thank you for using Oliver's Mininet Test Framework\n")
-        for host in self.hosts :
-            address = self.__add_ipv6_address(host)
-            info("Given IPv6 address: "+address+" to node: "+host.name+"\n")
+
+        result = super(TestFramework, self).start()
 
         for switch in self.switches :
             switch.cmd("sysctl net.ipv6.conf.all.disable_ipv6=0")
 
-        return super(TestFramework, self).start()
+        for host in self.hosts :
+            address = self.__add_ipv6_address(host)
+            info("Given IPv6 address: "+address+" to node: "+host.name+"\n")
+
+        return result
 
     def ping6( self, hosts=None, timeout=None ):
         """Ping between all specified hosts.
