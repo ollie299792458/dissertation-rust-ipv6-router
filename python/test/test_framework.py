@@ -79,7 +79,7 @@ class TestFramework(Mininet):
                         opts = '-W %s' % timeout
                     if dest.intfs:
                         result = node.cmd( 'ping6 -c1 %s %s' %
-                                           (opts, self.address(str(node))) )
+                                           (opts, self.address(str(dest))) )
                         sent, received = self._parsePing( result )
                     else:
                         sent, received = 0, 0
