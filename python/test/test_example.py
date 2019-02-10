@@ -14,6 +14,8 @@ def run():
     info('Example test starting\n')
 
     test.ping6()
+    # ran twice to allow correct discovery
+    test.ping6()
     info('Example test completed\n')
     test.stop()
 

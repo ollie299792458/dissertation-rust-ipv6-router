@@ -1,88 +1,25 @@
-
-#Pulled from http://csie.nqu.edu.tw/smallko/sdn/ipv6_test.htm on 29/01/2019
-
-"""
-
-Script created by VND - Visual Network Description (SDN version)
-
-"""
-
-from mininet.net import Mininet
-
-from mininet.node import Controller, RemoteController, OVSKernelSwitch, UserSwitch
-
-from mininet.cli import CLI
-
-from mininet.log import setLogLevel
-
-from mininet.link import Link, TCLink
+from mininet.log import info, setLogLevel
+from .test_framework import TestFramework
 
 
+def run():
+    test = TestFramework()
 
-def topology():
+    left_host = test.addHost('h1')
+    right_host = test.addHost('h2')
 
-    "Create a network."
+    test.addLink(left_host, right_host)
 
-    net = Mininet( controller=RemoteController, link=TCLink, switch=OVSKernelSwitch )
+    test.start()
+    info('Example test starting\n')
 
-    print("*** Creating nodes")
-
-    h1 = net.addHost( 'h1', mac='00:00:00:00:00:01', ip='10.0.0.1/24' )
-
-    h2 = net.addHost( 'h2', mac='00:00:00:00:00:02', ip='10.0.0.2/24' )
-
-    s4 = net.addSwitch( 's4', listenPort=6673, mac='00:00:00:00:00:04' )
-
-    c7 = net.addController( 'c7', controller=RemoteController, ip='127.0.0.1', port=6633 )
-
-
-
-    print("*** Creating links")
-
-    net.addLink(h1, s4)
-
-    net.addLink(s4, h2)
-
-
-
-    print("*** Starting network")
-
-    net.build()
-
-    c7.start()
-
-    s4.start( [c7] )
-
-    s4.cmd("sysctl net.ipv6.conf.all.disable_ipv6=1")
-
-    h1.cmd("ifconfig h1-eth0 inet6 add fc00::1/64")
-
-    h2.cmd("ifconfig h2-eth0 inet6 add fc00::2/64")
-
-    h1.cmdPrint("ping -c 3 10.0.0.2")
-
-    h1.cmdPrint("ping6 -c 3 fc00::2 -I h1-eth0")
-
-    h1.cmdPrint("route -6 -n")
-
-    h1.cmdPrint("ip -6 neighbor show")
-
-
-
-    print("*** Running CLI")
-
-    CLI( net )
-
-
-
-    print("*** Stopping network")
-
-    net.stop()
-
+    test.ping6()
+    # ran twice to allow correct discovery
+    test.ping6()
+    info('Example test completed\n')
+    test.stop()
 
 
 if __name__ == '__main__':
-
-    setLogLevel( 'info' )
-
-    topology()
+    setLogLevel('info')
+    run()

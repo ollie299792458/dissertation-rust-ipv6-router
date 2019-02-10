@@ -12,7 +12,7 @@ case $1 in
     tw_ex) #try the taiwanese example
         python -E python/test/research_ipv6_example.py
         ;;
-    ex) #placeholder - break out tests
+    ex) #example test of ipv6 wrapper
         python -m python.test.test_example
         ;;
 esac
