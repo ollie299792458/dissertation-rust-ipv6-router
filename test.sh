@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # run using "sudo test.sh"
+# make sure to build router first
 case $1 in
     -c) #clean up
         mn -c
@@ -14,5 +15,8 @@ case $1 in
         ;;
     ex) #example test of ipv6 wrapper
         python -m python.test.test_example
+        ;;
+    *) #if in doubt, run the playground test
+        python -m python.test.test_playground
         ;;
 esac

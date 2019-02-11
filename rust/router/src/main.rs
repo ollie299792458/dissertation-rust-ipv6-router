@@ -2,47 +2,64 @@ extern crate pnet;
 
 use pnet::datalink::{self, NetworkInterface};
 use pnet::datalink::Channel::Ethernet;
+use pnet::datalink::{DataLinkReceiver, DataLinkSender};
 use pnet::packet::{Packet, MutablePacket};
 use pnet::packet::ethernet::{EthernetPacket, MutableEthernetPacket};
 
 use std::env;
+use std::thread;
 
 fn main() {
-    let input_interface_name = env::args().nth(1).unwrap();
-    let output_interface_name = env::args().nth(2).unwrap();
-    let input_interface_names_match =
-        |iface: &NetworkInterface| iface.name == input_interface_name;
-    let output_interface_names_match =
-        |iface: &NetworkInterface| iface.name == output_interface_name;
+
+    println!("Welcome to Oliver's double ethernet diode");
+
+    let left_interface_name = env::args().nth(1).unwrap();
+    let right_interface_name = env::args().nth(2).unwrap();
+    let left_interface_names_match =
+        |iface: &NetworkInterface| iface.name == left_interface_name;
+    let right_interface_names_match =
+        |iface: &NetworkInterface| iface.name == right_interface_name;
 
     // Find the network interface with the provided names
     let interfaces = datalink::interfaces();
-    let input_interface = interfaces.into_iter()
-        .filter(input_interface_names_match)
+    let left_interface = interfaces.into_iter()
+        .filter(left_interface_names_match)
         .next()
         .unwrap();
     let interfaces = datalink::interfaces();
-    let output_interface = interfaces.into_iter()
-        .filter(output_interface_names_match)
+    let right_interface = interfaces.into_iter()
+        .filter(right_interface_names_match)
         .next()
         .unwrap();
 
     // Create the input channel, dealing with layer 2 packets
-    let (_, mut irx) = match datalink::channel(&input_interface, Default::default()) {
+    let (ltx, lrx) = match datalink::channel(&left_interface, Default::default()) {
         Ok(Ethernet(itx, irx)) => (itx, irx),
         Ok(_) => panic!("Unhandled channel type"),
         Err(e) => panic!("An error occurred when creating the datalink channel: {}", e)
     };
 
     // Create the output channel
-    let (mut otx, _) = match datalink::channel(&output_interface, Default::default()) {
+    let (rtx, rrx) = match datalink::channel(&right_interface, Default::default()) {
         Ok(Ethernet(otx, orx)) => (otx, orx),
         Ok(_) => panic!("Unhandled channel type"),
         Err(e) => panic!("An error occurred when creating the datalink channel: {}", e)
     };
 
+    // switch to async
+    let diode_thread_l_to_r = thread::spawn(|| run_diode(lrx, rtx, "ltor"));
+    let diode_thread_r_to_l = thread::spawn(|| run_diode(rrx, ltx, "rtol"));
+
+    println!("Left: {} and Right: {} channels set up", left_interface_name, right_interface_name);
+
+    println!("running");
+
+    print!("Completed {:?} {:?}",diode_thread_l_to_r.join(), diode_thread_r_to_l.join());
+}
+
+fn run_diode(mut rx: Box<DataLinkReceiver>, mut tx: Box<DataLinkSender>, tag: &str) {
     loop {
-        match irx.next() {
+        match rx.next() {
             Ok(packet) => {
                 let packet = EthernetPacket::new(packet).unwrap();
 
@@ -52,22 +69,24 @@ fn main() {
                 // problem, you could also use send_to.
                 //
                 // The packet is sent once the closure has finished executing.
-                otx.build_and_send(1, packet.packet().len(),
-                                  &mut | new_packet| {
-                                      let mut new_packet = MutableEthernetPacket::new(new_packet).unwrap();
+                println!("Tag: {} Sending packet: {:?}", tag, packet);
+                tx.build_and_send(1, packet.packet().len(),
+                                   &mut | new_packet| {
+                                       let mut new_packet = MutableEthernetPacket::new(new_packet).unwrap();
 
-                                      // Create a clone of the original packet
-                                      new_packet.clone_from(&packet);
+                                       // Create a clone of the original packet
+                                       new_packet.clone_from(&packet);
 
-                                      // Switch the source and destination
-                                      new_packet.set_source(packet.get_destination());
-                                      new_packet.set_destination(packet.get_source());
-                                  });
+                                       // Switch the source and destination
+                                       new_packet.set_source(packet.get_destination());
+                                       new_packet.set_destination(packet.get_source());
+                                   });
             },
             Err(e) => {
                 // If an error occurs, we can handle it here
                 panic!("An error occurred while reading: {}", e);
             }
-        }
     }
+}
+
 }

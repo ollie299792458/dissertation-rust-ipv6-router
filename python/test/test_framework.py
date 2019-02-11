@@ -1,4 +1,5 @@
 import os
+import sys
 
 from mininet.link import Intf, Link
 from mininet.log import info, error, output
@@ -126,3 +127,8 @@ class TestFramework(Mininet):
             ploss = 0
             output( "*** Warning: No packets sent\n" )
         return ploss
+
+    def runRouter(self, router):
+        popen = router.popen(stdout=sys.stdout, stderr=sys.stdout)
+        router.cmdPrint("./rust/router/target/debug/router r3-eth1 r3-eth0 &")
+        pass

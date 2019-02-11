@@ -1,6 +1,7 @@
 [package]
 name = "router"
 version = "0.0.1"
+edition = "2018"
 authors = ["Oliver Black <oliver.black.uk@gmail.com>"]
 
 [dependencies]

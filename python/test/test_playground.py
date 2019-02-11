@@ -1,3 +1,5 @@
+import time
+
 from mininet.log import info, setLogLevel
 from .test_framework import TestFramework
 
@@ -5,17 +7,24 @@ from .test_framework import TestFramework
 def run():
     test = TestFramework()
 
-    left_host = test.addHost('h1')
-    right_host = test.addHost('h2')
+    host1 = test.addHost('h1', mac='00:00:00:00:01:00')
+    host2 = test.addHost('h2', mac='00:00:00:00:02:00')
+    router = test.addHost('r3', mac='00:00:00:00:03:01')
 
-    test.addLink(left_host, right_host)
+    test.addLink(host1, router, addr2='00:00:00:00:03:01')
+    test.addLink(host2, router, addr2='00:00:00:00:03:02')
 
     test.start()
     info('Example test starting\n')
 
+    router.cmdPrint("ifconfig")
+
     test.ping6()
-    # ran twice to allow correct discovery
+
+    test.runRouter(router)
+
     test.ping6()
+
     info('Example test completed\n')
     test.stop()
 
