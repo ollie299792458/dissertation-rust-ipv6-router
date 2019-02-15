@@ -1,4 +1,5 @@
 import os
+import subprocess
 import sys
 
 from mininet.link import Intf, Link
@@ -21,6 +22,7 @@ class TestFramework(Mininet):
         self.__address_to_host = {}
         self.__count = 0
         self.__buildRouter()
+        self.router_process = None
         super(TestFramework, self).__init__(topo, switch, host,
                                             controller, link, intf,
                                             build, xterms, cleanup, ipBase,
@@ -29,7 +31,10 @@ class TestFramework(Mininet):
                                             listenPort, waitConnected)
 
     def __buildRouter(self):
-        # todo make this automated
+        info("Building router from source\n")
+        #todo fix this
+        #subprocess.call(['cargo build'], cwd='rust/router', shell=True)
+        info("Router built\n")
         return
 
     def __incCount(self):
@@ -72,6 +77,12 @@ class TestFramework(Mininet):
             info("Given IPv6 address: "+address+" to node: "+host.name+"\n")
 
         return result
+    
+    def stop(self):
+        if self.router_process:
+            info("Stopping router")
+            self.router_process.kill()
+        return super(TestFramework, self).stop()
 
     def addLink(self, node1, node2, port1=None, port2=None,
                  cls=None, **params):
@@ -128,7 +139,11 @@ class TestFramework(Mininet):
             output( "*** Warning: No packets sent\n" )
         return ploss
 
+    #todo run on a specific node's interfaces
     def runRouter(self, router):
-        popen = router.popen(stdout=sys.stdout, stderr=sys.stdout)
-        router.cmdPrint("./rust/router/target/debug/router r3-eth1 r3-eth0 &")
-        pass
+        info("Starting router")
+        self.router_process = router.popen("./rust/router/target/debug/router r3-eth0 r3-eth1", stdout=sys.stdout, stderr=sys.stdout, shell=True)
+        return self.router_process
+
+    def killRouter(self):
+        return self.router_process.kill()

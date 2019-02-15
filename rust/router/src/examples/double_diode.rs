@@ -10,12 +10,10 @@ use std::env;
 use std::thread;
 use pnet::util::MacAddr;
 
-fn main() {
+fn double_diode(left_interface_name: &str, right_interface_name: &str) {
 
     println!("Welcome to Oliver's double ethernet diode");
 
-    let left_interface_name = env::args().nth(1).unwrap();
-    let right_interface_name = env::args().nth(2).unwrap();
     let left_interface_names_match =
         |iface: &NetworkInterface| iface.name == left_interface_name;
     let right_interface_names_match =
@@ -72,22 +70,22 @@ fn run_diode(mut rx: Box<DataLinkReceiver>, mut tx: Box<DataLinkSender>, destina
                 // The packet is sent once the closure has finished executing.
                 println!("Tag: {} Sending packet: {:?}", tag, packet);
                 tx.build_and_send(1, packet.packet().len(),
-                                   &mut | new_packet| {
-                                       let mut new_packet = MutableEthernetPacket::new(new_packet).unwrap();
+                                  &mut | new_packet| {
+                                      let mut new_packet = MutableEthernetPacket::new(new_packet).unwrap();
 
-                                       // Create a clone of the original packet
-                                       new_packet.clone_from(&packet);
+                                      // Create a clone of the original packet
+                                      new_packet.clone_from(&packet);
 
-                                       // set the source and destination
-                                       new_packet.set_source(packet.get_destination());
-                                       new_packet.set_destination(destination_mac_address);
-                                   });
+                                      // set the source and destination
+                                      new_packet.set_source(packet.get_destination());
+                                      new_packet.set_destination(destination_mac_address);
+                                  });
             },
             Err(e) => {
                 // If an error occurs, we can handle it here
                 panic!("An error occurred while reading: {}", e);
             }
+        }
     }
-}
 
 }
