@@ -22,7 +22,8 @@ class TestFramework(Mininet):
         self.__address_to_host = {}
         self.__count = 0
         self.__buildRouter()
-        self.router_process = None
+        self.__router_process = None
+        self.__router = None
         super(TestFramework, self).__init__(topo, switch, host,
                                             controller, link, intf,
                                             build, xterms, cleanup, ipBase,
@@ -55,6 +56,7 @@ class TestFramework(Mininet):
         # add addresses to lookup maps
         self.__host_to_address[name] = address
         self.__address_to_host[address] = name
+        info("Given IPv6 address: "+address+" to node: "+node.name+"\n")
         return address
 
     # may return stale addresses if hosts are removed TODO
@@ -72,16 +74,19 @@ class TestFramework(Mininet):
         for switch in self.switches :
             switch.cmd("sysctl net.ipv6.conf.all.disable_ipv6=0")
 
+        gateway_address = self.__add_ipv6_address(self.__router)
+
         for host in self.hosts :
-            address = self.__add_ipv6_address(host)
-            info("Given IPv6 address: "+address+" to node: "+host.name+"\n")
+            if not host == self.__router:
+                self.__add_ipv6_address(host)
+                host.cmdPrint('ip -6 route add default via '+gateway_address)
 
         return result
     
     def stop(self):
-        if self.router_process:
+        if self.__router_process:
             info("Stopping router")
-            self.router_process.kill()
+            self.__router_process.kill()
         return super(TestFramework, self).stop()
 
     def addLink(self, node1, node2, port1=None, port2=None,
@@ -89,6 +94,10 @@ class TestFramework(Mininet):
 
         return super(TestFramework, self).addLink(node1, node2, port1, port2,
                                                   cls, **params)
+
+    def addRouter( self, name, cls=None, **params ):
+        self.__router = self.addHost(name, cls, **params)
+        return self.__router
 
     def ping6( self, hosts=None, timeout=None ):
         """Ping between all specified hosts.
@@ -140,10 +149,10 @@ class TestFramework(Mininet):
         return ploss
 
     #todo run on a specific node's interfaces
-    def runRouter(self, router):
+    def runRouter(self, router, **args):
         info("Starting router")
-        self.router_process = router.popen("./rust/router/target/debug/router r3-eth0 r3-eth1", stdout=sys.stdout, stderr=sys.stdout, shell=True)
-        return self.router_process
+        self.__router_process = router.popen("./rust/router/target/debug/router" + args, stdout=sys.stdout, stderr=sys.stdout, shell=True)
+        return self.__router_process
 
     def killRouter(self):
-        return self.router_process.kill()
+        return self.__router_process.kill()
