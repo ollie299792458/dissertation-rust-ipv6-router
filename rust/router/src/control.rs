@@ -12,25 +12,24 @@ pub struct Routing {
 impl Routing {
     pub fn new(default_route_ip6: Ipv6Addr, default_route_macs: InterfaceMacAddrs) -> Routing {
         let mut routing_table = HashMap::new();
-        routing_table.insert(default_route_ip6,default_route_mac);
+        routing_table.insert(default_route_ip6,default_route_macs);
         Routing { routing_table, default_route: default_route_ip6}
     }
-    pub fn add_route(&mut self, ip6:Ipv6Addr, mac:InterfaceMacAddrs) -> Result<(), WorkError> {
+    pub fn add_route(&mut self, ip6:Ipv6Addr, mac:InterfaceMacAddrs) {
         if ip6 != self.default_route {
-            res = self.routing_table.insert(ip6, mac);
-            Ok(())
+            self.routing_table.insert(ip6, mac); //todo maybe do something with the result
         } else {
-            Err("Can't add/update default route with add_route()")
+            panic!("Can't add/update default route with add_route()")
         }
     }
-
 
     //todo add routers ip as a special case
     //todo update_default_route - or maybe rethink the whole default route semantics
 
     pub fn get_route(&self, ip6:Ipv6Addr) -> Option<&InterfaceMacAddrs> {
         match self.routing_table.get(&ip6) {
-            Some(mac) => Some(mac),
+            Some(macs) => {//println!("Address looked up: {:?}, result: {:?}", ip6, macs);
+                                            Some(macs)},
             None => self.routing_table.get(&self.default_route)
         }
 
@@ -46,8 +45,8 @@ impl fmt::Debug for Routing {
 //pair of mac addresses to represent an interface
 
 pub struct InterfaceMacAddrs {
-    source: MacAddr,
-    destination: MacAddr,
+    pub source: MacAddr,
+    pub destination: MacAddr,
 }
 
 impl InterfaceMacAddrs {
@@ -58,7 +57,7 @@ impl InterfaceMacAddrs {
 
 impl fmt::Debug for InterfaceMacAddrs {
     fn fmt (&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{:?},{:?}", self.source, self.destination)
+        write!(f, "({:?},{:?})", self.source, self.destination)
     }
 }
 
