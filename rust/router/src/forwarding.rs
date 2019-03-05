@@ -13,6 +13,7 @@ use std::sync::mpsc::Sender;
 use std::sync::mpsc::channel;
 use std::sync::mpsc::Receiver;
 use std::sync::Arc;
+use std::net::Ipv6Addr;
 
 
 //RECEIVER
@@ -53,7 +54,9 @@ fn transform_packet_and_get_address(mut packet: MutableEthernetPacket, routing: 
     packet.set_payload(ipv6_packet.packet());
     packet.set_destination(macs.destination);
     packet.set_source(macs.source);
-    println!("Sent packet: {:?} to {:?}, from: {:?} & {:?}", ipv6_packet.get_destination(), macs.destination, ipv6_packet. get_source(), macs.source);
+    if macs.destination != MacAddr::new(0xff,00,00,00,00,00) {
+        println!("Sent packet (ip, mac): to {:?}, from: {:?}, on interface {:?} to {:?}", ipv6_packet.get_destination(), ipv6_packet.get_source(), macs.source, macs.destination);
+    }
     (macs.source, packet)
 }
 

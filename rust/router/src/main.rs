@@ -30,7 +30,7 @@ fn main() {
 
     //for now - setup unchanging routing table, then start forwarder plan threads
     let mut routing = Routing::new(Ipv6Addr::new(0xfc00, 0,0,0,0,0,0,0),
-                InterfaceMacAddrs::new(MacAddr(00,00,00,00,03,00),MacAddr(00,00,00,00,00,00)));
+                InterfaceMacAddrs::new(MacAddr(00,00,00,00,03,00),MacAddr(0xff,00,00,00,00,00)));
 
     routing.add_route(Ipv6Addr::new(0xfc00, 0,0,0,0,0,0,1),
                             InterfaceMacAddrs::new(MacAddr(00,00,00,00,03,01),MacAddr(00,00,00,00,01,00)));
@@ -49,7 +49,7 @@ fn main() {
             Ok(_) => panic!("Unhandled channel type"),
             Err(e) => panic!("An error occurred when creating the datalink channel: {}", e)
         };
-        println!("Intf mac: {:?}", interface.mac_address());
+        //println!("Intf mac: {:?}", interface.mac_address());
         tx_channels.insert(interface.mac_address(),tx);
         rx_channels.insert(interface.mac_address(), rx);
     }

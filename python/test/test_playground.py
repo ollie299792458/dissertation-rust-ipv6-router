@@ -7,8 +7,8 @@ from .test_framework import TestFramework
 def run():
     test = TestFramework()
 
-    default = test.addHost('d0', mac='00:00:00:00:00:00')
-    left = test.addHost('h1', mac='00:00:00:00:01:00')
+    default = test.addDefault('d0', mac='ff:00:00:00:00:00')
+    left = test.addHost('h1', mac='00:00:00:00:01:00') #todo allow setting ipv6 address
     right = test.addHost('h2', mac='00:00:00:00:02:00')
     router = test.addRouter('r3', mac='00:00:00:00:03:00')
 
@@ -19,19 +19,16 @@ def run():
     test.start()
     info('Example test starting\n')
 
-    default.cmdPrint("ifconfig")
-    left.cmdPrint("ifconfig")
-    right.cmdPrint("ifconfig")
-    router.cmdPrint("ifconfig")
+    #default.cmdPrint("ifconfig")
+    #left.cmdPrint("ip -6 route")
+    #right.cmdPrint("ifconfig")
+    #router.cmdPrint("ifconfig")
 
     router_process = test.runRouter(router)
-
     time.sleep(1)
-
     test.ping6()
 
     info('Example test completed\n')
-    test.killRouter()
     test.stop()
 
 

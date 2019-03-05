@@ -1,6 +1,7 @@
 import os
 import subprocess
 import sys
+from time import sleep
 
 from mininet.link import Intf, Link
 from mininet.log import info, error, output
@@ -9,8 +10,9 @@ from mininet.node import OVSKernelSwitch, Host, DefaultController
 from mininet.topo import Topo
 
 
-# To use: extend and implement build(self) method
 class TestFramework(Mininet):
+
+    #todo allow specifying ipv6 addresses on creation
 
     def __init__(self, topo=None, switch=OVSKernelSwitch, host=Host,
                  controller=DefaultController, link=Link, intf=Intf,
@@ -24,6 +26,7 @@ class TestFramework(Mininet):
         self.__buildRouter()
         self.__router_process = None
         self.__router = None
+        self.__default = None
         super(TestFramework, self).__init__(topo, switch, host,
                                             controller, link, intf,
                                             build, xterms, cleanup, ipBase,
@@ -49,16 +52,21 @@ class TestFramework(Mininet):
         address = "fc00::" + str(count)
         name = node.name
         # add address to interface
-        intfcount = 0
-        for intf in node.intfs:
-            node.cmd("ifconfig " + name + "-eth" + str(intfcount) + " inet6 add " + address + "/64")
-            intfcount += 1
-        intfcount += 1
+        for port, intf in node.intfs.iteritems():
+            node.cmd("ifconfig " + intf.name + " inet6 add " + address + "/64")
         # add addresses to lookup maps
         self.__host_to_address[name] = address
         self.__address_to_host[address] = name
         info("Given IPv6 address: " + address + " to node: " + node.name + "\n")
         return address
+
+    #must be called after __add_ipv6_address
+    def __add_default_route(self, node, gateway_address):
+        while "tentative" in node.cmd("ip -6 addr"):
+            sleep(0.1)
+        node.cmd("ip -6 route add default via " + gateway_address +" src "+self.address(node.name))
+
+
 
     # may return stale addresses if hosts are removed TODO
     def address(self, name):
@@ -75,13 +83,20 @@ class TestFramework(Mininet):
         for switch in self.switches:
             switch.cmd("sysctl net.ipv6.conf.all.disable_ipv6=0")
 
-        gateway_address = self.__add_ipv6_address(self.__router)
+        self.__add_ipv6_address(self.__default)
 
         for host in self.hosts:
-            if not host == self.__router:
+            if (not host == self.__router) and (not host == self.__default):
                 self.__add_ipv6_address(host)
-                # todo don't run on default gateway
-                host.cmdPrint('ip -6 route add default via ' + gateway_address)
+
+        gateway_address = self.__add_ipv6_address(self.__router)
+
+        self.__add_default_route(self.__default, gateway_address)
+
+        for host in self.hosts:
+            # pings from router and default are slightly meaningless
+            if (not host == self.__router) and (not host == self.__default):
+                self.__add_default_route(host, gateway_address)
 
         return result
 
@@ -97,10 +112,14 @@ class TestFramework(Mininet):
         return super(TestFramework, self).addLink(node1, node2, port1, port2,
                                                   cls, **params)
 
-    # todo only allow a single router to be added
+    # todo only allow a single router & default to be added
     def addRouter(self, name, cls=None, **params):
         self.__router = self.addHost(name, cls, **params)
         return self.__router
+
+    def addDefault(self, name, cls=None, **params):
+        self.__default = self.addHost(name,cls, **params)
+        return self.__default
 
     def ping6(self, hosts=None, timeout=None):
         """Ping between all specified hosts.
@@ -115,6 +134,9 @@ class TestFramework(Mininet):
             hosts = self.hosts
             output('*** Ping6: testing ping reachability\n')
         for node in hosts:
+            # don't ping from router
+            if self.__router == node:
+                continue
             output('%s -> ' % node.name)
             for dest in hosts:
                 if node != dest:
@@ -157,6 +179,3 @@ class TestFramework(Mininet):
         self.__router_process = router.popen("./rust/router/target/debug/router", stdout=sys.stdout, stderr=sys.stdout,
                                              shell=True)
         return self.__router_process
-
-    def killRouter(self):
-        return self.__router_process.kill()
