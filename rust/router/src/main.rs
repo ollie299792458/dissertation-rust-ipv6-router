@@ -1,93 +1,84 @@
 extern crate pnet;
 
-use pnet::datalink::{self, NetworkInterface};
+use pnet::datalink::{self};
 use pnet::datalink::Channel::Ethernet;
-use pnet::datalink::{DataLinkReceiver, DataLinkSender};
-use pnet::packet::{Packet, MutablePacket};
-use pnet::packet::ethernet::{EthernetPacket, MutableEthernetPacket};
-
-use std::env;
-use std::thread;
 use pnet::util::MacAddr;
+
+use std::net::Ipv6Addr;
+use std::collections::HashMap;
+
+mod control;
+use control::Routing;
+use control::InterfaceMacAddrs;
+use std::sync::Arc;
+
+mod forwarding;
+
 
 fn main() {
 
-    println!("Welcome to Oliver's double ethernet diode");
+    println!("Welcome to Oliver's Software IPv6 Router");
 
-    let left_interface_name = env::args().nth(1).unwrap();
-    let right_interface_name = env::args().nth(2).unwrap();
-    let left_interface_names_match =
-        |iface: &NetworkInterface| iface.name == left_interface_name;
-    let right_interface_names_match =
-        |iface: &NetworkInterface| iface.name == right_interface_name;
+    //for now - setup unchanging routing table, then start forwarder plan threads
+    let mut routing = Routing::new(Ipv6Addr::new(0xfc00, 0,0,0,0,0,0,0),
+                InterfaceMacAddrs::new(MacAddr(00,00,00,00,03,00),MacAddr(0xff,00,00,00,00,00)));
 
-    // Find the network interface with the provided names
+    routing.add_route(Ipv6Addr::new(0xfc00, 0,0,0,0,0,0,1),
+                            InterfaceMacAddrs::new(MacAddr(00,00,00,00,03,01),MacAddr(00,00,00,00,01,00)));
+    routing.add_route(Ipv6Addr::new(0xfc00, 0,0,0,0,0,0,2),
+                            InterfaceMacAddrs::new(MacAddr(00,00,00,00,03,02), MacAddr(00,00,00,00,02,00)));
+
+    //todo do this automatically
+    //add solicited multicast addresses
+    routing.add_route(Ipv6Addr::new(0xff02, 0,0,0,0,1,0xff00,1),
+                      InterfaceMacAddrs::new(MacAddr(00,00,00,00,03,01),MacAddr(00,00,00,00,01,00)));
+    routing.add_route(Ipv6Addr::new(0xff02, 0,0,0,0,1,0xff00,2),
+                      InterfaceMacAddrs::new(MacAddr(00,00,00,00,03,02),MacAddr(00,00,00,00,02,00)));
+
+    println!("Static routing table setup:{:?}",routing);
+
+    //start all the tx threads, collecting all their input channels in a HashMap
     let interfaces = datalink::interfaces();
-    let left_interface = interfaces.into_iter()
-        .filter(left_interface_names_match)
-        .next()
-        .unwrap();
-    let interfaces = datalink::interfaces();
-    let right_interface = interfaces.into_iter()
-        .filter(right_interface_names_match)
-        .next()
-        .unwrap();
-
-    // Create the input channel, dealing with layer 2 packets
-    let (ltx, lrx) = match datalink::channel(&left_interface, Default::default()) {
-        Ok(Ethernet(itx, irx)) => (itx, irx),
-        Ok(_) => panic!("Unhandled channel type"),
-        Err(e) => panic!("An error occurred when creating the datalink channel: {}", e)
-    };
-
-    // Create the output channel
-    let (rtx, rrx) = match datalink::channel(&right_interface, Default::default()) {
-        Ok(Ethernet(otx, orx)) => (otx, orx),
-        Ok(_) => panic!("Unhandled channel type"),
-        Err(e) => panic!("An error occurred when creating the datalink channel: {}", e)
-    };
-
-    // switch to async
-    let diode_thread_l_to_r = thread::spawn(|| run_diode(lrx, rtx, MacAddr(00,00,00,00,02,00),"ltor"));
-    let diode_thread_r_to_l = thread::spawn(|| run_diode(rrx, ltx, MacAddr(00,00,00,00,01,00),"rtol"));
-
-    println!("Left: {} and Right: {} channels set up", left_interface_name, right_interface_name);
-
-    println!("running");
-
-    print!("Completed {:?} {:?}",diode_thread_l_to_r.join(), diode_thread_r_to_l.join());
-}
-
-fn run_diode(mut rx: Box<DataLinkReceiver>, mut tx: Box<DataLinkSender>, destination_mac_address: MacAddr, tag: &str) {
-    loop {
-        match rx.next() {
-            Ok(packet) => {
-                let packet = EthernetPacket::new(packet).unwrap();
-
-                // Constructs a single packet, the same length as the the one received,
-                // using the provided closure. This allows the packet to be constructed
-                // directly in the write buffer, without copying. If copying is not a
-                // problem, you could also use send_to.
-                //
-                // The packet is sent once the closure has finished executing.
-                println!("Tag: {} Sending packet: {:?}", tag, packet);
-                tx.build_and_send(1, packet.packet().len(),
-                                   &mut | new_packet| {
-                                       let mut new_packet = MutableEthernetPacket::new(new_packet).unwrap();
-
-                                       // Create a clone of the original packet
-                                       new_packet.clone_from(&packet);
-
-                                       // set the source and destination
-                                       new_packet.set_source(packet.get_destination());
-                                       new_packet.set_destination(destination_mac_address);
-                                   });
-            },
-            Err(e) => {
-                // If an error occurs, we can handle it here
-                panic!("An error occurred while reading: {}", e);
-            }
+    let mut tx_channels = HashMap::new();
+    let mut rx_channels = HashMap::new();
+    for interface in interfaces {
+        let (tx,rx) = match datalink::channel(&interface, Default::default()) {
+            Ok(Ethernet(itx, irx)) => (itx, irx),
+            Ok(_) => panic!("Unhandled channel type"),
+            Err(e) => panic!("An error occurred when creating the datalink channel: {}", e)
+        };
+        //println!("Intf mac: {:?}", interface.mac_address());
+        tx_channels.insert(interface.mac_address(),tx);
+        rx_channels.insert(interface.mac_address(), rx);
     }
-}
 
+
+    //start all tx threads, getting the tx channel from each
+    let mut tx_senders = HashMap::new();
+    let mut sender_threads = Vec::new();
+    for (adr,tx) in tx_channels {
+        let (handle, sender) = forwarding::start_sender(tx);
+        tx_senders.insert(adr, sender);
+        sender_threads.push(handle);
+    }
+
+    let routing_arc = Arc::new(routing);
+    //start all the rx threads, giving each one the tx channels
+    let mut receiver_threads = Vec::new();
+    for (_,rx) in rx_channels {
+        let routing_arc = Arc::clone(&routing_arc);
+        receiver_threads.push(forwarding::start_receiver(rx, &tx_senders, routing_arc));
+    }
+
+    println!("Running");
+
+    for thread in receiver_threads {
+        thread.join().unwrap_or_default();
+    }
+
+    for thread in sender_threads {
+        thread.join().unwrap_or_default();
+    }
+
+    println!("Finished");
 }
