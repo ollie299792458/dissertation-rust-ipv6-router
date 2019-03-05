@@ -65,7 +65,7 @@ class TestFramework(Mininet):
         while "tentative" in node.cmd("ip -6 addr"):
             sleep(0.1)
         node.cmd("ip -6 route add default via " + gateway_address +" src "+self.address(node.name))
-
+        info("Set default route: "+gateway_address+", for: "+node.name+"\n")
 
 
     # may return stale addresses if hosts are removed TODO
@@ -97,6 +97,9 @@ class TestFramework(Mininet):
             # pings from router and default are slightly meaningless
             if (not host == self.__router) and (not host == self.__default):
                 self.__add_default_route(host, gateway_address)
+
+        # may want to change
+        self.__add_default_route(self.__router, self.address(self.__default.name))
 
         return result
 

@@ -19,10 +19,10 @@ def run():
     test.start()
     info('Example test starting\n')
 
-    #default.cmdPrint("ifconfig")
-    #left.cmdPrint("ip -6 route")
-    #right.cmdPrint("ifconfig")
-    #router.cmdPrint("ifconfig")
+    default.cmdPrint("ifconfig")
+    left.cmdPrint("ifconfig")
+    right.cmdPrint("ifconfig")
+    router.cmdPrint("ifconfig")
 
     router_process = test.runRouter(router)
     time.sleep(1)

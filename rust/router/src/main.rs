@@ -19,15 +19,6 @@ fn main() {
 
     println!("Welcome to Oliver's Software IPv6 Router");
 
-    /*
-       TODO plan
-       - Add node as gateway to neighours (in python) DONE
-       - Add static routing thread DONE - kind of
-       - Add thread per interface to forward packets - done
-       - Kill threads - not needed
-       - Use channels and add tx threads - done
-    */
-
     //for now - setup unchanging routing table, then start forwarder plan threads
     let mut routing = Routing::new(Ipv6Addr::new(0xfc00, 0,0,0,0,0,0,0),
                 InterfaceMacAddrs::new(MacAddr(00,00,00,00,03,00),MacAddr(0xff,00,00,00,00,00)));
@@ -36,6 +27,13 @@ fn main() {
                             InterfaceMacAddrs::new(MacAddr(00,00,00,00,03,01),MacAddr(00,00,00,00,01,00)));
     routing.add_route(Ipv6Addr::new(0xfc00, 0,0,0,0,0,0,2),
                             InterfaceMacAddrs::new(MacAddr(00,00,00,00,03,02), MacAddr(00,00,00,00,02,00)));
+
+    //todo do this automatically
+    //add solicited multicast addresses
+    routing.add_route(Ipv6Addr::new(0xff02, 0,0,0,0,1,0xff00,1),
+                      InterfaceMacAddrs::new(MacAddr(00,00,00,00,03,01),MacAddr(00,00,00,00,01,00)));
+    routing.add_route(Ipv6Addr::new(0xff02, 0,0,0,0,1,0xff00,2),
+                      InterfaceMacAddrs::new(MacAddr(00,00,00,00,03,02),MacAddr(00,00,00,00,02,00)));
 
     println!("Static routing table setup:{:?}",routing);
 
