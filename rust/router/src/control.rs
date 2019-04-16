@@ -10,11 +10,53 @@ pub struct Routing {
 }
 
 impl Routing {
-    pub fn new(default_route_ip6: Ipv6Addr, default_route_macs: InterfaceMacAddrs) -> Routing {
+    /**
+    Aim - get this:
+    {ff02::1:ff00:2: (00:00:00:00:03:02,00:00:00:00:02:00), fc00::2: (00:00:00:00:03:02,00:00:00:00:02:00)
+    , ff02::1:ff00:1: (00:00:00:00:03:01,00:00:00:00:01:00), fc00::1: (00:00:00:00:03:01,00:00:00:00:01:00)
+    , fc00::: (00:00:00:00:03:00,ff:00:00:00:00:00)}
+
+    **/
+
+    pub fn new(configuration:String) -> Routing {
         let mut routing_table = HashMap::new();
-        routing_table.insert(default_route_ip6,default_route_macs);
-        Routing { routing_table, default_route: default_route_ip6}
+
+        let mut lines = configuration.lines();
+
+        //get default route "IPv6" (first line)
+        let default_route_string = lines.next().unwrap();
+
+        //todo handle invalid strings better
+
+        let default_route = default_route_string.parse::<Ipv6Addr>().unwrap();
+
+        //get hashmap entries "IPv6-MAC,MAC" (inc a line for default route)
+        for line in lines {
+            let mut addrs = line.split("@");
+            let ipv6_str = addrs.next().unwrap();
+            let ipv6 = match ipv6_str.parse::<Ipv6Addr>() {
+                Ok(a) => a,
+                Err(e) => {println!("Invalid IPv6 Address: {}", ipv6_str); Err(e).unwrap()},
+            };
+            let mac_addrs_str = addrs.next().unwrap();
+            let mut mac_addrs = mac_addrs_str.split(",");
+            let source_str = mac_addrs.next().unwrap();
+            let destination_str = mac_addrs.next().unwrap();
+            let source = match source_str.parse::<MacAddr>() {
+                Ok(a) => a,
+                Err(e) => {println!("Invalid MAC Address: {}", ipv6_str); Err(e).unwrap()},
+            };
+            let destination = match destination_str.parse::<MacAddr>(){
+                Ok(a) => a,
+                Err(e) => {println!("Invalid MAC Address: {}", ipv6_str); Err(e).unwrap()},
+            };
+            let macs = InterfaceMacAddrs::new(source, destination);
+            routing_table.insert(ipv6,macs);
+        }
+
+        Routing { routing_table, default_route }
     }
+
     pub fn add_route(&mut self, ip6:Ipv6Addr, mac:InterfaceMacAddrs) {
         if ip6 != self.default_route {
             self.routing_table.insert(ip6, mac); //todo maybe do something with the result

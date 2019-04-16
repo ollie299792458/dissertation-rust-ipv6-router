@@ -178,7 +178,7 @@ class TestFramework(Mininet):
 
     # todo run on a specific node's interfaces
     def runRouter(self, router, **args):
-        info("Starting router")
+        info("Starting router\n")
         self.__router_process = router.popen("./rust/router/target/debug/router", stdout=sys.stdout, stderr=sys.stdout,
                                              shell=True)
         return self.__router_process

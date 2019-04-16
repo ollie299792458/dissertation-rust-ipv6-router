@@ -4,10 +4,14 @@
     <cargoProject FILE="$PROJECT_DIR$/router_rust/Cargo.toml" />
     <cargoProject FILE="$PROJECT_DIR$/rust/router/Cargo.toml" />
   </component>
+  <component name="MacroExpansionManager">
+    <option name="directoryName" value="bcJajucY" />
+  </component>
   <component name="ProjectRootManager" version="2" languageLevel="JDK_1_3" project-jdk-name="Python 2.7" project-jdk-type="Python SDK">
     <output url="file://$PROJECT_DIR$/out" />
   </component>
   <component name="RustProjectSettings">
     <option name="toolchainHomeDirectory" value="$USER_HOME$/.cargo/bin" />
+    <option name="version" value="2" />
   </component>
 </project>
