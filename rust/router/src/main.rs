@@ -17,7 +17,6 @@ fn main() {
 
     println!("Welcome to Oliver's Software IPv6 Router");
 
-
     let contents = fs::read_to_string("/home/oliver/Documents/Git_Reps/dissertation-rust-ipv6-router/rust/router/resource/routing.txt").unwrap(); //env::args().next());
 
     let routing = Routing::new(contents);

@@ -22,7 +22,6 @@ class TestFramework(Mininet):
                  listenPort=None, waitConnected=False):
         self.__host_to_address = {}
         self.__address_to_host = {}
-        self.__count = 0
         self.__buildRouter()
         self.__router_process = None
         self.__router = None
@@ -41,15 +40,7 @@ class TestFramework(Mininet):
         info("Router built\n")
         return
 
-    def __incCount(self):
-        result = self.__count
-        self.__count += 1
-        return result
-
-    def __add_ipv6_address(self, node):
-        count = self.__incCount()
-        # maybe get address from node rather than allocating a new one; done for parsing, visual debug, & compatibility
-        address = "fc00::" + str(count)
+    def __add_ipv6_address(self, node, address):
         name = node.name
         # add address to interface
         for port, intf in node.intfs.iteritems():
@@ -83,20 +74,20 @@ class TestFramework(Mininet):
         for switch in self.switches:
             switch.cmd("sysctl net.ipv6.conf.all.disable_ipv6=0")
 
-        self.__add_ipv6_address(self.__default)
+        self.__add_ipv6_address(self.__default, self.__host_to_address.get(self.__default.name))
 
         for host in self.hosts:
             if (not host == self.__router) and (not host == self.__default):
-                self.__add_ipv6_address(host)
+                self.__add_ipv6_address(host, self.__host_to_address.get(host.name))
 
-        gateway_address = self.__add_ipv6_address(self.__router)
+        router_address = self.__add_ipv6_address(self.__router, self.__host_to_address.get(self.__router.name))
 
-        self.__add_default_route(self.__default, gateway_address)
+        self.__add_default_route(self.__default, router_address)
 
         for host in self.hosts:
             # pings from router and default are slightly meaningless
             if (not host == self.__router) and (not host == self.__default):
-                self.__add_default_route(host, gateway_address)
+                self.__add_default_route(host, router_address)
 
         # may want to change
         self.__add_default_route(self.__router, self.address(self.__default.name))
@@ -115,13 +106,20 @@ class TestFramework(Mininet):
         return super(TestFramework, self).addLink(node1, node2, port1, port2,
                                                   cls, **params)
 
+    def addIPv6Host( self, name, ipv6_address, cls=None, **params ):
+        result = self.addHost(name, cls, **params)
+        self.__add_ipv6_address(result,ipv6_address)
+        self.__host_to_address[name] = ipv6_address
+        self.__address_to_host[ipv6_address] = name
+        return result;
+
     # todo only allow a single router & default to be added
-    def addRouter(self, name, cls=None, **params):
-        self.__router = self.addHost(name, cls, **params)
+    def addRouter(self, name, ipv6_address, cls=None, **params):
+        self.__router = self.addIPv6Host(name, ipv6_address, cls, **params)
         return self.__router
 
-    def addDefault(self, name, cls=None, **params):
-        self.__default = self.addHost(name,cls, **params)
+    def addDefault(self, name, ipv6_address, cls=None, **params):
+        self.__default = self.addIPv6Host(name, ipv6_address, cls, **params)
         return self.__default
 
     def ping6(self, hosts=None, timeout=None):

@@ -7,10 +7,10 @@ from .test_framework import TestFramework
 def run():
     test = TestFramework()
 
-    default = test.addDefault('d0', mac='ff:00:00:00:00:00')
-    left = test.addHost('h1', mac='00:00:00:00:01:00') #todo allow setting ipv6 address
-    right = test.addHost('h2', mac='00:00:00:00:02:00')
-    router = test.addRouter('r3', mac='00:00:00:00:03:00')
+    default = test.addDefault('d0', 'fc00::', mac='ff:00:00:00:00:00')
+    left = test.addIPv6Host('h1', 'fc00::1', mac='00:00:00:00:01:00', )
+    right = test.addIPv6Host('h2', 'fc00::2', mac='00:00:00:00:02:00', )
+    router = test.addRouter('r3', 'fc00::3', mac='00:00:00:00:03:00', )
 
     test.addLink(default, router, addr2='00:00:00:00:03:00')
     test.addLink(left, router, addr2='00:00:00:00:03:01')
