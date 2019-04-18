@@ -29,7 +29,13 @@ fn receiver_loop(mut rx: Box<DataLinkReceiver>, tx_senders : HashMap<MacAddr,Sen
                 //println!("Received packet: {:?}", EthernetPacket::new(packet));
                 let packet = packet.to_vec();
                 let packet = MutableEthernetPacket::owned(packet).unwrap();
-                let (mac_address,packet) = transform_packet_and_get_address(packet, Arc::clone(&routing));
+                let (mac_address,packet) = match transform_packet_and_get_address(packet, Arc::clone(&routing)) {
+                    Ok(p) => p,
+                    Err(e) => {
+                        println!("{}", e);
+                        continue;
+                    }
+                };
                 let tx = match tx_senders.get(&mac_address) {
                     Some(tx) => tx,
                     None => panic!("Transmission interface not found for: {:?}", mac_address),
@@ -45,21 +51,38 @@ fn receiver_loop(mut rx: Box<DataLinkReceiver>, tx_senders : HashMap<MacAddr,Sen
     }
 }
 
-fn transform_packet_and_get_address(mut packet: MutableEthernetPacket, routing: Arc<Routing>) -> (MacAddr, MutableEthernetPacket) {
+fn transform_packet_and_get_address(mut packet: MutableEthernetPacket, routing: Arc<Routing>) -> Result<(MacAddr, MutableEthernetPacket), String> {
     let ipv6_packet = MutableIpv6Packet::owned(packet.payload().to_vec()).unwrap();
     //println!("Received ipv6 packet: source: {:?} destination: {:?}", ipv6_packet.get_source(), ipv6_packet.get_destination());
     let macs = routing.get_route(ipv6_packet.get_destination()).unwrap();
-    let ipv6_packet = transform_ipv6_packet(ipv6_packet);
+    let ipv6_packet = match transform_ipv6_packet(ipv6_packet, Arc::clone(&routing)) {
+        Ok(p) => p,
+        Err(e) => return Err(e),
+    };
     packet.set_payload(ipv6_packet.packet());
     packet.set_destination(macs.destination);
     packet.set_source(macs.source);
     //println!("Sent packet (ip, mac): to {:?}, from: {:?}, on interface {:?} to {:?}", ipv6_packet.get_destination(), ipv6_packet.get_source(), macs.source, macs.destination);
-    (macs.source, packet)
+    return Ok((macs.source, packet));
 }
 
-fn transform_ipv6_packet(packet: MutableIpv6Packet) -> (MutableIpv6Packet) {
-    //todo handle icmpv6 - next hops, etc
-    return packet;
+fn transform_ipv6_packet(packet: MutableIpv6Packet, routing: Arc<Routing>) -> Result<MutableIpv6Packet, String> {
+    //packet length
+    let reported_length = packet.get_payload_length();
+    let actual_length = packet.packet().len() as u16 - 40; //40 is the length of the first header
+    if reported_length != actual_length {
+        return Err(format!("incorrect payload length, reported: {}, actual: {}", reported_length, actual_length));
+    }
+    //hop limit
+    let hop_limit = packet.get_hop_limit();
+    let destination = packet.get_destination();
+    if hop_limit < 0 || ((hop_limit <= 1) && destination != routing.get_router_address()) {
+        return Err("hop limit reached, packet dropped".parse().unwrap());
+    }
+
+    //todo do ICMPv6 if for this node - destination (general breakout)
+
+    return Ok(packet);
 }
 
 //SENDER

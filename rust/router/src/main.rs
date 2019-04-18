@@ -17,7 +17,13 @@ fn main() {
 
     println!("Welcome to Oliver's Software IPv6 Router");
 
-    let contents = fs::read_to_string(env::args().next()).unwrap();
+    let config_file = env::args().nth(1).unwrap();
+
+    println!("{}",config_file);
+
+    let contents = fs::read_to_string(config_file).unwrap();
+
+    println!("hi");
 
     let routing = Routing::new(contents);
 

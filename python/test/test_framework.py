@@ -205,6 +205,8 @@ class TestFramework(Mininet):
 
         f.write(self.__host_to_address[self.__default.name]+"\n")
 
+        f.write(self.__host_to_address[self.__router.name]+"\n")
+
         for host in self.hosts:
             if not host == self.__router:
                 f.write(self.__host_to_address[host.name]+"@"+self.__mac_pairs[router.name+host.name]+"\n")
