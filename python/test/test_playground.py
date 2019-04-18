@@ -8,13 +8,13 @@ def run():
     test = TestFramework()
 
     default = test.addDefault('d0', 'fc00::', mac='ff:00:00:00:00:00')
-    left = test.addIPv6Host('h1', 'fc00::1', mac='00:00:00:00:01:00', )
-    right = test.addIPv6Host('h2', 'fc00::2', mac='00:00:00:00:02:00', )
-    router = test.addRouter('r3', 'fc00::3', mac='00:00:00:00:03:00', )
+    left = test.addIPv6Host('h1', 'fc00::1', mac='00:00:00:00:01:00')
+    right = test.addIPv6Host('h2', 'fc00::2', mac='00:00:00:00:02:00')
+    router = test.addRouter('r3', 'fc00::3', mac='00:00:00:00:03:00')
 
     test.addLink(default, router, addr2='00:00:00:00:03:00')
-    test.addLink(left, router, addr2='00:00:00:00:03:01')
-    test.addLink(right, router, addr2='00:00:00:00:03:02')
+    test.addLink(left, router, addr1='00:00:00:00:01:00', addr2='00:00:00:00:03:01')
+    test.addLink(right, router, addr1='00:00:00:00:02:00', addr2='00:00:00:00:03:02')
 
     test.start()
     info('Example test starting\n')
