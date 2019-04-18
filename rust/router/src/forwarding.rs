@@ -4,8 +4,8 @@ use std::thread::JoinHandle;
 
 use pnet::util::MacAddr;
 use pnet::packet::Packet;
-use pnet::packet::ethernet::{EthernetPacket, MutableEthernetPacket};
-use pnet::packet::ipv6::{Ipv6Packet, MutableIpv6Packet};
+use pnet::packet::ethernet::MutableEthernetPacket;
+use pnet::packet::ipv6::MutableIpv6Packet;
 use pnet::datalink::{DataLinkReceiver,DataLinkSender};
 
 use crate::control::Routing;
@@ -13,7 +13,6 @@ use std::sync::mpsc::Sender;
 use std::sync::mpsc::channel;
 use std::sync::mpsc::Receiver;
 use std::sync::Arc;
-use std::net::Ipv6Addr;
 
 
 //RECEIVER

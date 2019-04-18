@@ -17,18 +17,18 @@ def run():
     test.addLink(right, router, addr1='00:00:00:00:02:00', addr2='00:00:00:00:03:02')
 
     test.start()
-    info('Example test starting\n')
-
-    default.cmdPrint("ifconfig")
-    left.cmdPrint("ifconfig")
-    right.cmdPrint("ifconfig")
-    router.cmdPrint("ifconfig")
+    info('1112 Static routing test starting\n')
 
     router_process = test.runRouter(router)
     time.sleep(1)
-    test.ping6()
+    ploss = test.ping6()
 
-    info('Example test completed\n')
+    state = 'Successful'
+
+    if ploss != 0:
+        state = "FAILED"
+
+    info('Static routing test completed:'+state+'\n')
     test.stop()
 
 

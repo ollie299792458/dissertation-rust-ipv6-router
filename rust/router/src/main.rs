@@ -2,15 +2,13 @@ extern crate pnet;
 
 use pnet::datalink::{self};
 use pnet::datalink::Channel::Ethernet;
-use pnet::util::MacAddr;
 
-use std::net::Ipv6Addr;
 use std::collections::HashMap;
 
 mod control;
 use control::Routing;
-use control::InterfaceMacAddrs;
 use std::sync::Arc;
+use std::{fs, env};
 
 mod forwarding;
 
@@ -19,21 +17,9 @@ fn main() {
 
     println!("Welcome to Oliver's Software IPv6 Router");
 
-    //for now - setup unchanging routing table, then start forwarder plan threads
-    let mut routing = Routing::new(Ipv6Addr::new(0xfc00, 0,0,0,0,0,0,0),
-                InterfaceMacAddrs::new(MacAddr(00,00,00,00,03,00),MacAddr(0xff,00,00,00,00,00)));
+    let contents = fs::read_to_string("/home/oliver/Documents/Git_Reps/dissertation-rust-ipv6-router/rust/router/resource/routing.txt").unwrap(); //env::args().next());
 
-    routing.add_route(Ipv6Addr::new(0xfc00, 0,0,0,0,0,0,1),
-                            InterfaceMacAddrs::new(MacAddr(00,00,00,00,03,01),MacAddr(00,00,00,00,01,00)));
-    routing.add_route(Ipv6Addr::new(0xfc00, 0,0,0,0,0,0,2),
-                            InterfaceMacAddrs::new(MacAddr(00,00,00,00,03,02), MacAddr(00,00,00,00,02,00)));
-
-    //todo do this automatically
-    //add solicited multicast addresses
-    routing.add_route(Ipv6Addr::new(0xff02, 0,0,0,0,1,0xff00,1),
-                      InterfaceMacAddrs::new(MacAddr(00,00,00,00,03,01),MacAddr(00,00,00,00,01,00)));
-    routing.add_route(Ipv6Addr::new(0xff02, 0,0,0,0,1,0xff00,2),
-                      InterfaceMacAddrs::new(MacAddr(00,00,00,00,03,02),MacAddr(00,00,00,00,02,00)));
+    let routing = Routing::new(contents);
 
     println!("Static routing table setup:{:?}",routing);
 
