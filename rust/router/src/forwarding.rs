@@ -26,9 +26,9 @@ fn receiver_loop(mut rx: Box<DataLinkReceiver>, tx_senders : HashMap<MacAddr,Sen
     loop {
         match rx.next() {
             Ok(packet) => { //todo lots of copies here, and locked routing struct, potential performance bottleneck
-                //println!("Received packet: {:?}", EthernetPacket::new(packet));
                 let packet = packet.to_vec();
                 let packet = MutableEthernetPacket::owned(packet).unwrap();
+                println!("Received packet: {:?}, data: {:?}", packet, packet.packet());
                 let (mac_address,packet) = match transform_packet_and_get_address(packet, Arc::clone(&routing)) {
                     Ok(p) => p,
                     Err(e) => {
@@ -52,13 +52,17 @@ fn receiver_loop(mut rx: Box<DataLinkReceiver>, tx_senders : HashMap<MacAddr,Sen
 }
 
 fn transform_packet_and_get_address(mut packet: MutableEthernetPacket, routing: Arc<Routing>) -> Result<(MacAddr, MutableEthernetPacket), String> {
-    let ipv6_packet = MutableIpv6Packet::owned(packet.payload().to_vec()).unwrap();
+    let ipv6_packet = match MutableIpv6Packet::owned(packet.payload().to_vec()) {
+        Some(p) => p,
+        None => return Err(format!("Invalid Packet")),
+    };
     //println!("Received ipv6 packet: source: {:?} destination: {:?}", ipv6_packet.get_source(), ipv6_packet.get_destination());
     let macs = routing.get_route(ipv6_packet.get_destination()).unwrap();
     let ipv6_packet = match transform_ipv6_packet(ipv6_packet, Arc::clone(&routing)) {
         Ok(p) => p,
         Err(e) => return Err(e),
     };
+
     packet.set_payload(ipv6_packet.packet());
     packet.set_destination(macs.destination);
     packet.set_source(macs.source);
@@ -66,21 +70,24 @@ fn transform_packet_and_get_address(mut packet: MutableEthernetPacket, routing: 
     return Ok((macs.source, packet));
 }
 
-fn transform_ipv6_packet(packet: MutableIpv6Packet, routing: Arc<Routing>) -> Result<MutableIpv6Packet, String> {
+fn transform_ipv6_packet(mut packet: MutableIpv6Packet, routing: Arc<Routing>) -> Result<MutableIpv6Packet, String> {
     //packet length
     let reported_length = packet.get_payload_length();
     let actual_length = packet.packet().len() as u16 - 40; //40 is the length of the first header
+    //println!("Reported length: {}, actual length: {:?}", reported_length, actual_length);
     if reported_length != actual_length {
-        return Err(format!("incorrect payload length, reported: {}, actual: {}", reported_length, actual_length));
+        return Err(format!("Incorrect payload length, reported: {}, actual: {}", reported_length, actual_length));
     }
     //hop limit
     let hop_limit = packet.get_hop_limit();
     let destination = packet.get_destination();
     if hop_limit < 0 || ((hop_limit <= 1) && destination != routing.get_router_address()) {
-        return Err("hop limit reached, packet dropped".parse().unwrap());
+        return Err(format!("Hop limit reached, packet dropped"));
+    } else {
+        packet.set_hop_limit(hop_limit-1);
     }
 
-    //todo do ICMPv6 if for this node - destination (general breakout)
+    //todo do ICMPv6 if for this node - destination (general breakout) and next header split
 
     return Ok(packet);
 }

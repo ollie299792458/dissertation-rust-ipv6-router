@@ -19,11 +19,7 @@ fn main() {
 
     let config_file = env::args().nth(1).unwrap();
 
-    println!("{}",config_file);
-
     let contents = fs::read_to_string(config_file).unwrap();
-
-    println!("hi");
 
     let routing = Routing::new(contents);
 

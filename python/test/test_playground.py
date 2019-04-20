@@ -1,3 +1,4 @@
+import sys
 import time
 
 from mininet.log import info, setLogLevel
@@ -7,9 +8,12 @@ from .test_framework import TestFramework
 def run():
     test = TestFramework()
 
+    left_address = 'fc00::1'
+    right_address = 'fc00::2'
+
     default = test.addDefault('d0', 'fc00::', mac='ff:00:00:00:00:00')
-    left = test.addIPv6Host('h1', 'fc00::1', mac='00:00:00:00:01:00')
-    right = test.addIPv6Host('h2', 'fc00::2', mac='00:00:00:00:02:00')
+    left = test.addIPv6Host('h1', left_address, mac='00:00:00:00:01:00')
+    right = test.addIPv6Host('h2', right_address, mac='00:00:00:00:02:00')
     router = test.addRouter('r3', 'fc00::3', mac='00:00:00:00:03:00')
 
     test.addLink(default, router, addr2='00:00:00:00:03:00')
@@ -25,10 +29,23 @@ def run():
     router.cmdPrint("ifconfig")
 
     router_process = test.runRouter(router)
+
     time.sleep(1)
-    test.ping6()
+
+    test.pingAll()
+
+    server_process = left.popen([sys.executable,"./python/test/testing_tools/test_server.py", left_address], stdout=sys.stdout, stderr=sys.stdout,
+                                       shell=True)
+
+    time.sleep(1)
+
+    client_process = right.popen([sys.executable,"./python/test/testing_tools/test_client.py", '11211', right_address,
+                                  left_address], stdout=sys.stdout, stderr=sys.stdout, shell=True)
+
+    time.sleep(1)
 
     info('Example test completed\n')
+    server_process.kill()
     test.stop()
 
 
