@@ -3,9 +3,9 @@ use std::collections::hash_map::HashMap;
 use std::thread::JoinHandle;
 
 use pnet::util::MacAddr;
-use pnet::packet::Packet;
+use pnet::packet::{MutablePacket,Packet};
 use pnet::packet::ethernet::MutableEthernetPacket;
-use pnet::packet::ipv6::MutableIpv6Packet;
+use pnet::packet::ipv6::{MutableIpv6Packet,Ipv6Packet};
 use pnet::datalink::{DataLinkReceiver,DataLinkSender};
 
 use crate::control::Routing;
@@ -28,7 +28,7 @@ fn receiver_loop(mut rx: Box<DataLinkReceiver>, tx_senders : HashMap<MacAddr,Sen
             Ok(packet) => { //todo lots of copies here, and locked routing struct, potential performance bottleneck
                 let packet = packet.to_vec();
                 let packet = MutableEthernetPacket::owned(packet).unwrap();
-                println!("Received packet: {:?}, data: {:?}", packet, packet.packet());
+                //println!("Received packet: {:?}, data: {:?}", packet, packet.packet());
                 let (mac_address,packet) = match transform_packet_and_get_address(packet, Arc::clone(&routing)) {
                     Ok(p) => p,
                     Err(e) => {
@@ -51,11 +51,17 @@ fn receiver_loop(mut rx: Box<DataLinkReceiver>, tx_senders : HashMap<MacAddr,Sen
     }
 }
 
-fn transform_packet_and_get_address(mut packet: MutableEthernetPacket, routing: Arc<Routing>) -> Result<(MacAddr, MutableEthernetPacket), String> {
-    let ipv6_packet = match MutableIpv6Packet::owned(packet.payload().to_vec()) {
+fn transform_packet_and_get_address(old_packet: MutableEthernetPacket, routing: Arc<Routing>) -> Result<(MacAddr, MutableEthernetPacket), String> {
+    let ethertype = old_packet.get_ethertype();
+
+    let old_ipv6_packet = match Ipv6Packet::new(old_packet.payload()) {
         Some(p) => p,
         None => return Err(format!("Invalid Packet")),
     };
+
+    let buffer:Vec<u8> = vec![0;old_ipv6_packet.packet().len()];
+    let mut ipv6_packet = MutableIpv6Packet::owned(buffer).unwrap();
+    ipv6_packet.clone_from(&old_ipv6_packet);
     //println!("Received ipv6 packet: source: {:?} destination: {:?}", ipv6_packet.get_source(), ipv6_packet.get_destination());
     let macs = routing.get_route(ipv6_packet.get_destination()).unwrap();
     let ipv6_packet = match transform_ipv6_packet(ipv6_packet, Arc::clone(&routing)) {
@@ -63,9 +69,12 @@ fn transform_packet_and_get_address(mut packet: MutableEthernetPacket, routing: 
         Err(e) => return Err(e),
     };
 
+    let buffer:Vec<u8> = vec![0;old_packet.packet().len()];
+    let mut packet = MutableEthernetPacket::owned(buffer).unwrap();
     packet.set_payload(ipv6_packet.packet());
     packet.set_destination(macs.destination);
     packet.set_source(macs.source);
+    packet.set_ethertype(ethertype);
     //println!("Sent packet (ip, mac): to {:?}, from: {:?}, on interface {:?} to {:?}", ipv6_packet.get_destination(), ipv6_packet.get_source(), macs.source, macs.destination);
     return Ok((macs.source, packet));
 }
@@ -84,7 +93,9 @@ fn transform_ipv6_packet(mut packet: MutableIpv6Packet, routing: Arc<Routing>) -
     if hop_limit < 0 || ((hop_limit <= 1) && destination != routing.get_router_address()) {
         return Err(format!("Hop limit reached, packet dropped"));
     } else {
-        packet.set_hop_limit(hop_limit-1);
+        let new_hop_limit = hop_limit -1;
+        //packet.set_hop_limit(new_hop_limit);
+        println!("{}", new_hop_limit);
     }
 
     //todo do ICMPv6 if for this node - destination (general breakout) and next header split

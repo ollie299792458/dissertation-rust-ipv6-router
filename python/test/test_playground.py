@@ -32,7 +32,7 @@ def run():
 
     time.sleep(1)
 
-    test.pingAll()
+    test.ping6()
 
     server_process = left.popen([sys.executable,"./python/test/testing_tools/test_server.py", left_address], stdout=sys.stdout, stderr=sys.stdout,
                                        shell=True)

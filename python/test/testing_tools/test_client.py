@@ -39,8 +39,9 @@ def getIPv6Header(version = 6,
 
 
 def get11211packet(source_address, destination_address):
-    ip_header = getIPv6Header(payload_length=16, source_address=source_address, destination_address=destination_address)
-    data = ''.join(random.choice(string.ascii_lowercase) for x in range(16))
+    payload_length = 0
+    ip_header = getIPv6Header(payload_length=payload_length, source_address=source_address, destination_address=destination_address)
+    data = ''.join(random.choice(string.ascii_lowercase) for x in range(payload_length))
     packet = ip_header + data
     return packet, destination_address
 
