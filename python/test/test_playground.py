@@ -23,10 +23,7 @@ def run():
     test.start()
     info('Example test starting\n')
 
-    default.cmdPrint("ifconfig")
-    left.cmdPrint("ifconfig")
-    right.cmdPrint("ifconfig")
-    router.cmdPrint("ifconfig")
+    #default.cmdPrint("ifconfig")
 
     router_process = test.runRouter(router)
 
