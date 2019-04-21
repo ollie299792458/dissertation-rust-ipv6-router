@@ -27,7 +27,7 @@ fn receiver_loop(mut rx: Box<DataLinkReceiver>, tx_senders : HashMap<MacAddr,Sen
         match rx.next() {
             Ok(packet) => { //todo lots of copies here, and locked routing struct, potential performance bottleneck
                 let old_packet = EthernetPacket::new(packet).unwrap();
-                //println!("Received packet: {:?}, data: {:?}", packet, packet.packet());
+                println!("Received packet: {:?}, data: {:?}", old_packet, old_packet.payload());
                 let mut buffer = vec![0;old_packet.packet().len()];
                 let mut new_packet= MutableEthernetPacket::new(&mut buffer).unwrap();
                 let (mac_address) = match transform_packet_and_get_address(old_packet, &mut new_packet, Arc::clone(&routing)) {
@@ -90,7 +90,7 @@ fn transform_ipv6_packet(old_packet: Ipv6Packet, new_ethernet_packet: &mut Mutab
     } else {
         let new_hop_limit:u8 = hop_limit - 1_u8;
         //todo fix this, actually decrementing hop limit works, but results in inexplicable packet drops
-        //new_packet.set_hop_limit(new_hop_limit);
+        new_packet.set_hop_limit(new_hop_limit);
     }
 
     //todo do ICMPv6 if for this node - destination (general breakout) and next header split
@@ -108,6 +108,7 @@ pub fn start_sender(tx : Box<DataLinkSender>) -> (JoinHandle<()>, Sender<Box<[u8
 fn sender_loop(mut sender: Box<DataLinkSender>, receiver: Receiver<Box<[u8]>>) {
     loop {
         let packet = receiver.recv().unwrap();
+        println!("Sent packet: {:?}, data: {:?}", EthernetPacket::new(&packet).unwrap(), EthernetPacket::new(&packet).unwrap().payload());
         /*if EthernetPacket::new(&packet).unwrap().get_destination() != MacAddr(00, 00, 00, 00, 00, 00) {
             println!("Sent packet: {:?}", EthernetPacket::new(&packet));
         }*/
