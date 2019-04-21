@@ -27,19 +27,21 @@ def run():
 
     router_process = test.runRouter(router)
 
+    server_process = left.popen(["./rust/test_server/target/debug/test_server", "h1-eth0"], stdout=sys.stdout, stderr=sys.stdout,
+                                       shell=True)
+
+    #server_process = left.popen([sys.executable,"./python/test/testing_tools/test_server.py", left_address], stdout=sys.stdout, stderr=sys.stdout,
+    #                            shell=True)
+
     time.sleep(1)
 
     test.ping6()
 
-    server_process = left.popen([sys.executable,"./python/test/testing_tools/test_server.py", left_address], stdout=sys.stdout, stderr=sys.stdout,
-                                       shell=True)
-
     time.sleep(1)
 
-    client_process = right.popen([sys.executable,"./python/test/testing_tools/test_client.py", '11211', right_address,
-                                  left_address], stdout=sys.stdout, stderr=sys.stdout, shell=True)
-
-    time.sleep(1)
+    #client_process = right.popen([sys.executable,"./python/test/testing_tools/test_client.py", '11211', right_address,
+     #                             left_address], stdout=sys.stdout, stderr=sys.stdout, shell=True)
+    #time.sleep(1)
 
     info('Example test completed\n')
     server_process.kill()

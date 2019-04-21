@@ -90,7 +90,7 @@ fn transform_ipv6_packet(old_packet: Ipv6Packet, new_ethernet_packet: &mut Mutab
     } else {
         let new_hop_limit:u8 = hop_limit - 1_u8;
         //todo fix this, actually decrementing hop limit works, but results in inexplicable packet drops
-        new_packet.set_hop_limit(new_hop_limit +1_u8);
+        //new_packet.set_hop_limit(new_hop_limit);
     }
 
     //todo do ICMPv6 if for this node - destination (general breakout) and next header split

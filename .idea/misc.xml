@@ -3,6 +3,8 @@
   <component name="CargoProjects">
     <cargoProject FILE="$PROJECT_DIR$/router_rust/Cargo.toml" />
     <cargoProject FILE="$PROJECT_DIR$/rust/router/Cargo.toml" />
+    <cargoProject FILE="$PROJECT_DIR$/rust/test_server/Cargo.toml" />
+    <cargoProject FILE="$PROJECT_DIR$/rust/test_client/Cargo.toml" />
   </component>
   <component name="MacroExpansionManager">
     <option name="directoryName" value="bcJajucY" />

@@ -4,6 +4,9 @@
     <modules>
       <module fileurl="file://$PROJECT_DIR$/rust/router/router.iml" filepath="$PROJECT_DIR$/rust/router/router.iml" />
       <module fileurl="file://$PROJECT_DIR$/python/test/test.iml" filepath="$PROJECT_DIR$/python/test/test.iml" />
+      <module fileurl="file://$PROJECT_DIR$/rust/test_client/test_client.iml" filepath="$PROJECT_DIR$/rust/test_client/test_client.iml" />
+      <module fileurl="file://$PROJECT_DIR$/rust/test_server/test_server.iml" filepath="$PROJECT_DIR$/rust/test_server/test_server.iml" />
+      <module fileurl="file://$PROJECT_DIR$/test_server/test_server.iml" filepath="$PROJECT_DIR$/test_server/test_server.iml" />
     </modules>
   </component>
 </project>
