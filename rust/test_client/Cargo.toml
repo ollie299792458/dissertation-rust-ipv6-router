@@ -5,3 +5,6 @@ authors = ["Oliver Black <oliver.black.uk@gmail.com>"]
 edition = "2018"
 
 [dependencies]
+[dependencies.pnet]
+version = "0.22.0"
+
