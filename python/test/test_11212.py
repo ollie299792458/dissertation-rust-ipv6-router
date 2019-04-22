@@ -21,18 +21,18 @@ def run():
     test.addLink(right, router, addr1='00:00:00:00:02:00', addr2='00:00:00:00:03:02')
 
     test.start()
-    info('11211 payload_length test starting\n')
+    info('11212 hop_limit test starting\n')
 
     #default.cmdPrint("ifconfig")
 
     router_process = test.runRouter(router)
 
     server_process = right.popen(["./rust/test_server/target/debug/test_server", "h2-eth0"], stdout=sys.stdout, stderr=sys.stdout,
-                                       shell=True)
+                                 shell=True)
 
     time.sleep(1)
 
-    client_process = left.popen(["./rust/test_client/target/debug/test_client", "h1-eth0", "11211",
+    client_process = left.popen(["./rust/test_client/target/debug/test_client", "h1-eth0", "11212",
                                  '00:00:00:00:01:00',left_address, right_address], stdout=sys.stdout, stderr=sys.stdout,
                                 shell=True)
 
@@ -44,7 +44,7 @@ def run():
      #                             left_address], stdout=sys.stdout, stderr=sys.stdout, shell=True)
     #time.sleep(1)
 
-    info('Test completed: if two packets dropped due to payload length, then success\n')
+    info('Test completed: if one packet dropped due to hop limit then one with 9 as 8th octect, then success\n')
     server_process.kill()
     test.stop()
 

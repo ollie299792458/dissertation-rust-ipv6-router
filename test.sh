@@ -14,8 +14,14 @@ case $1 in
     tw_ex) #try the taiwanese example
         python -E python/test/research_ipv6_example.py
         ;;
-    1112) #example test of ipv6 wrapper
+    1112)
         python -m python.test.test_1112
+        ;;
+    11211)
+        python -m python.test.test_11211
+        ;;
+    11212)
+        python -m python.test.test_11212
         ;;
     ex) #example test of ipv6 wrapper
         python -m python.test.test_example
