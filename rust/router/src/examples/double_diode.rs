@@ -79,6 +79,9 @@ fn run_diode(mut rx: Box<DataLinkReceiver>, mut tx: Box<DataLinkSender>, destina
                                       // set the source and destination
                                       new_packet.set_source(packet.get_destination());
                                       new_packet.set_destination(destination_mac_address);
+
+                                      let mut ipv6_packet = MutableIpv6Packet::new(new_packet.payload_mut());
+                                      ipv6_packet.set_hop_limit(ipv6_packet.get_hop_limit()-1);
                                   });
             },
             Err(e) => {

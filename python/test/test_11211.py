@@ -36,6 +36,8 @@ def run():
                                  '00:00:00:00:01:00',left_address, right_address], stdout=sys.stdout, stderr=sys.stdout,
                                 shell=True)
 
+    info('if two packets dropped due to payload length, then success')
+
 
     time.sleep(1)
 

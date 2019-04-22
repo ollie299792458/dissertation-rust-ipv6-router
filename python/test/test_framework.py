@@ -1,4 +1,5 @@
 import os
+import socket
 import subprocess
 import sys
 from time import sleep
@@ -204,6 +205,8 @@ class TestFramework(Mininet):
         f = open(file_location,"w+")
 
         f.write(self.__host_to_address[self.__default.name]+"\n")
+
+        f.write(self.__host_to_address[self.__router.name]+"\n")
 
         for host in self.hosts:
             if not host == self.__router:

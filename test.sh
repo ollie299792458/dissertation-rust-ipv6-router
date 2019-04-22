@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # run using "sudo test.sh"
 # make sure to build router first
+export RUST_BACKTRACE=1
 case $1 in
     -c) #clean up
         mn -c

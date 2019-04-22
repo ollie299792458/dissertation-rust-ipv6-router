@@ -7,31 +7,34 @@ pub struct Routing {
     //hash table for now, maybe move to something more complex
     routing_table:HashMap<Ipv6Addr, InterfaceMacAddrs>,
     default_route:Ipv6Addr,
+    router_address:Ipv6Addr,
 }
 
 impl Routing {
-    /**
-    Aim - get this:
-    {ff02::1:ff00:2: (00:00:00:00:03:02,00:00:00:00:02:00), fc00::2: (00:00:00:00:03:02,00:00:00:00:02:00)
-    , ff02::1:ff00:1: (00:00:00:00:03:01,00:00:00:00:01:00), fc00::1: (00:00:00:00:03:01,00:00:00:00:01:00)
-    , fc00::: (00:00:00:00:03:00,ff:00:00:00:00:00)}
-
-    **/
-
     pub fn new(configuration:String) -> Routing {
         let mut routing_table = HashMap::new();
 
         let mut lines = configuration.lines();
 
         //get default route "IPv6" (first line)
-        let default_route_string = lines.next().unwrap();
+        let ipv6_str = lines.next().unwrap();
+        let default_route =  match ipv6_str.parse::<Ipv6Addr>() {
+            Ok(a) => a,
+            Err(e) => {println!("Invalid default IPv6 Address: {}", ipv6_str); Err(e).unwrap()},
+        };
 
-        //todo handle invalid strings better
-
-        let default_route = default_route_string.parse::<Ipv6Addr>().unwrap();
+        //get router address (second line)
+        let ipv6_str = lines.next().unwrap();
+        let router_address = match ipv6_str.parse::<Ipv6Addr>() {
+            Ok(a) => a,
+            Err(e) => {println!("Invalid router IPv6 Address: {}", ipv6_str); Err(e).unwrap()},
+        };
 
         //get hashmap entries "IPv6-MAC,MAC" (inc a line for default route)
         for line in lines {
+            if line == "" {
+                break;
+            }
             let mut addrs = line.split("@");
             let ipv6_str = addrs.next().unwrap();
             let ipv6 = match ipv6_str.parse::<Ipv6Addr>() {
@@ -54,7 +57,7 @@ impl Routing {
             routing_table.insert(ipv6,macs);
         }
 
-        Routing { routing_table, default_route }
+        Routing { routing_table, default_route, router_address}
     }
 
     pub fn add_route(&mut self, ip6:Ipv6Addr, mac:InterfaceMacAddrs) {
@@ -75,6 +78,10 @@ impl Routing {
             None => self.routing_table.get(&self.default_route)
         }
 
+    }
+
+    pub fn get_router_address(&self) -> Ipv6Addr {
+        return self.router_address;
     }
 }
 
