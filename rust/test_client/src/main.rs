@@ -55,11 +55,30 @@ fn main() {
         tx.send_to(packet.packet(), None);
     }
 
+    if test == "11212" {
+        let mut buffer:Vec<u8> = vec![0;54];
+        let mut packet= MutableEthernetPacket::new(&mut buffer).unwrap();
+        get_packet(&mut packet,interface.mac_address(), destination_mac, source_ip, destination_ip);
+        let mut payload = MutableIpv6Packet::new(packet.payload_mut()).unwrap();
+        get_11212_packet(&mut payload, 1);
+        tx.send_to(packet.packet(), None);
+        let mut buffer:Vec<u8> = vec![0;54];
+        let mut packet= MutableEthernetPacket::new(&mut buffer).unwrap();
+        get_packet(&mut packet,interface.mac_address(), destination_mac, source_ip, destination_ip);
+        let mut payload = MutableIpv6Packet::new(packet.payload_mut()).unwrap();
+        get_11212_packet(&mut payload, 10);
+        tx.send_to(packet.packet(), None);
+    }
+
     println!("Packets sent");
 }
 
 fn get_11211_packet(packet: &mut MutableIpv6Packet, size: u16) {
     packet.set_payload_length(size);
+}
+
+fn get_11212_packet(packet: &mut MutableIpv6Packet, hop_limit: u8) {
+    packet.set_hop_limit(hop_limit);
 }
 
 fn get_ipv6_packet(packet: &mut MutableIpv6Packet, source:Ipv6Addr, destination:Ipv6Addr) {
