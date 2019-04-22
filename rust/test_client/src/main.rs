@@ -40,29 +40,26 @@ fn main() {
         Err(e) => panic!("An error occurred when creating the datalink channel: {}", e)
     };
 
-    let size = 64;
-    let mut buffer:Vec<u8> = vec![0;size];
-    let mut packet= MutableEthernetPacket::new(&mut buffer).unwrap();
-
-    let mut payload = MutableIpv6Packet::new(packet.payload_mut()).unwrap();
-    get_ipv6_packet(&mut payload, source_ip, destination_ip);
     if test == "11211" {
-        get_11211_packet(&mut payload)
+        let mut buffer:Vec<u8> = vec![0;64];
+        let mut packet= MutableEthernetPacket::new(&mut buffer).unwrap();
+        get_packet(&mut packet,interface.mac_address(), destination_mac, source_ip, destination_ip);
+        let mut payload = MutableIpv6Packet::new(packet.payload_mut()).unwrap();
+        get_11211_packet(&mut payload, 5);
+        tx.send_to(packet.packet(), None);
+        let mut buffer:Vec<u8> = vec![0;59];
+        let mut packet= MutableEthernetPacket::new(&mut buffer).unwrap();
+        get_packet(&mut packet,interface.mac_address(), destination_mac, source_ip, destination_ip);
+        let mut payload = MutableIpv6Packet::new(packet.payload_mut()).unwrap();
+        get_11211_packet(&mut payload, 10);
+        tx.send_to(packet.packet(), None);
     }
-
-    packet.set_source(interface.mac_address());
-    packet.set_destination(destination_mac);
-    packet.set_ethertype(Ipv6);
-
-    tx.send_to(&packet.packet(), None);
 
     println!("Packets sent");
 }
 
-fn get_11211_packet(packet: &mut MutableIpv6Packet) {
-    packet.set_payload_length(4);
-    let payload:Vec<u8> = vec![1,2,3,4];
-    packet.set_payload(&payload);
+fn get_11211_packet(packet: &mut MutableIpv6Packet, size: u16) {
+    packet.set_payload_length(size);
 }
 
 fn get_ipv6_packet(packet: &mut MutableIpv6Packet, source:Ipv6Addr, destination:Ipv6Addr) {
@@ -74,4 +71,13 @@ fn get_ipv6_packet(packet: &mut MutableIpv6Packet, source:Ipv6Addr, destination:
     packet.set_hop_limit(10);
     packet.set_source(source);
     packet.set_destination(destination);
+}
+
+fn get_packet(packet: &mut MutableEthernetPacket, source: MacAddr, destination: MacAddr, source_ip: Ipv6Addr, destination_ip: Ipv6Addr) {
+    packet.set_source(source);
+    packet.set_destination(destination);
+    packet.set_ethertype(Ipv6);
+
+    let mut payload = MutableIpv6Packet::new(packet.payload_mut()).unwrap();
+    get_ipv6_packet(&mut payload, source_ip, destination_ip);
 }

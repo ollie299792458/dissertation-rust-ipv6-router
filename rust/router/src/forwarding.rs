@@ -27,7 +27,7 @@ fn receiver_loop(mut rx: Box<DataLinkReceiver>, tx_senders : HashMap<MacAddr,Sen
         match rx.next() {
             Ok(packet) => { //todo lots of copies here, and locked routing struct, potential performance bottleneck
                 let old_packet = EthernetPacket::new(packet).unwrap();
-                println!("Received packet: {:?}, data: {:?}", old_packet, old_packet.payload());
+                //println!("Received packet: {:?}, data: {:?}", old_packet, old_packet.payload());
                 let mut buffer = vec![0;old_packet.packet().len()];
                 let mut new_packet= MutableEthernetPacket::new(&mut buffer).unwrap();
                 let (mac_address) = match transform_packet_and_get_address(old_packet, &mut new_packet, Arc::clone(&routing)) {
@@ -108,7 +108,7 @@ pub fn start_sender(tx : Box<DataLinkSender>) -> (JoinHandle<()>, Sender<Box<[u8
 fn sender_loop(mut sender: Box<DataLinkSender>, receiver: Receiver<Box<[u8]>>) {
     loop {
         let packet = receiver.recv().unwrap();
-        println!("Sent packet: {:?}, data: {:?}", EthernetPacket::new(&packet).unwrap(), EthernetPacket::new(&packet).unwrap().payload());
+        //println!("Sent packet: {:?}, data: {:?}", EthernetPacket::new(&packet).unwrap(), EthernetPacket::new(&packet).unwrap().payload());
         /*if EthernetPacket::new(&packet).unwrap().get_destination() != MacAddr(00, 00, 00, 00, 00, 00) {
             println!("Sent packet: {:?}", EthernetPacket::new(&packet));
         }*/

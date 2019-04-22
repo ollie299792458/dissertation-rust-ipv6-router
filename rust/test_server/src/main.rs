@@ -35,7 +35,7 @@ fn main() {
             Ok(packet) => {
                 let eth_packet = EthernetPacket::new(packet).unwrap();
                 let ipv6_packet = Ipv6Packet::new(eth_packet.payload()).unwrap();
-                println!("{}",ipv6_packet.get_hop_limit());
+                println!("{:?}:{:?}",ipv6_packet.get_source(), ipv6_packet.packet());
                 //println!("{:X?}",packet);
             }
             Err(e)=> {
