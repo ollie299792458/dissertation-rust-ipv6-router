@@ -28,6 +28,7 @@ def run():
     if ploss != 0:
         state = "FAILED"
 
+    # todo move from ping6 to direct packet sending, to avoid failure due to hop_limit decrement
     info('Static routing test completed:'+state+'\n')
     test.stop()
 

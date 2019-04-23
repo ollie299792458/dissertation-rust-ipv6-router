@@ -6,6 +6,7 @@ use std::fmt;
 pub struct Routing {
     //hash table for now, maybe move to something more complex
     routing_table:HashMap<Ipv6Addr, InterfaceMacAddrs>,
+    mtu_table:HashMap<MacAddr, u32>,
     default_route:Ipv6Addr,
     router_address:Ipv6Addr,
 }
@@ -13,6 +14,7 @@ pub struct Routing {
 impl Routing {
     pub fn new(configuration:String) -> Routing {
         let mut routing_table = HashMap::new();
+        let mut mtu_table = HashMap::new();
 
         let mut lines = configuration.lines();
 
@@ -30,10 +32,30 @@ impl Routing {
             Err(e) => {println!("Invalid router IPv6 Address: {}", ipv6_str); Err(e).unwrap()},
         };
 
-        //get hashmap entries "IPv6-MAC,MAC" (inc a line for default route)
+        //get hashmap entries "IPv6@MAC,MAC" (inc a line for default route) - lines starting with "mtu" are mtuMTU@ROUTER_MAC lines
         for line in lines {
-            if line == "" {
+            if line =="" {
                 break;
+            }
+            if line.starts_with("mtu") {
+                if line == "" {
+                    break;
+                }
+                let mut mtu_lines = line.split("mtu");
+                mtu_lines.next();
+                let mtu_line = mtu_lines.next().unwrap();
+                let mut addrs = mtu_line.split("@");
+                let mtu_str = addrs.next().unwrap();
+                let mac_str = addrs.next().unwrap();
+                let mtu = match mtu_str.parse::<u32>() {
+                    Ok(mtu) => mtu,
+                    Err(e) => {println!("Invalid mtu: {}", mtu_str); Err(e).unwrap()}
+                };
+                let mac = match mac_str.parse::<MacAddr>() {
+                    Ok(mac) => mac,
+                    Err(e) => {println!("Invalid MAC Addresss: {}", mac_str); Err(e).unwrap()}
+                };
+                mtu_table.insert(mac, mtu);
             }
             let mut addrs = line.split("@");
             let ipv6_str = addrs.next().unwrap();
@@ -47,17 +69,17 @@ impl Routing {
             let destination_str = mac_addrs.next().unwrap();
             let source = match source_str.parse::<MacAddr>() {
                 Ok(a) => a,
-                Err(e) => {println!("Invalid MAC Address: {}", ipv6_str); Err(e).unwrap()},
+                Err(e) => {println!("Invalid MAC Address: {}", source_str); Err(e).unwrap()},
             };
             let destination = match destination_str.parse::<MacAddr>(){
                 Ok(a) => a,
-                Err(e) => {println!("Invalid MAC Address: {}", ipv6_str); Err(e).unwrap()},
+                Err(e) => {println!("Invalid MAC Address: {}", destination_str); Err(e).unwrap()},
             };
             let macs = InterfaceMacAddrs::new(source, destination);
             routing_table.insert(ipv6,macs);
         }
 
-        Routing { routing_table, default_route, router_address}
+        Routing { routing_table, mtu_table, default_route, router_address}
     }
 
     pub fn add_route(&mut self, ip6:Ipv6Addr, mac:InterfaceMacAddrs) {
@@ -71,17 +93,24 @@ impl Routing {
     //todo add routers ip as a special case
     //todo update_default_route - or maybe rethink the whole default route semantics
 
-    pub fn get_route(&self, ip6:Ipv6Addr) -> Option<&InterfaceMacAddrs> {
+    pub fn get_route(&self, ip6:Ipv6Addr) -> &InterfaceMacAddrs {
         match self.routing_table.get(&ip6) {
             Some(macs) => {//println!("Address looked up: {:?}, result: {:?}", ip6, macs);
-                                            Some(macs)},
-            None => self.routing_table.get(&self.default_route)
+                                            macs},
+            None => self.routing_table.get(&self.default_route).unwrap()
         }
 
     }
 
     pub fn get_router_address(&self) -> Ipv6Addr {
         return self.router_address;
+    }
+
+    pub fn get_mtu(&self, mac:MacAddr) -> u32{
+        match self.mtu_table.get(&mac) {
+            Some(mtu) => mtu.clone(),
+            None => u32::max_value(),
+        }
     }
 }
 
