@@ -22,14 +22,14 @@ def run():
     test.addLink(right, router, addr1='00:00:00:00:02:00', addr2='00:00:00:00:03:02')
 
     test.start()
-    info('Example test starting\n')
+    info('Test 1211 starting\n')
 
     #default.cmdPrint("ifconfig")
 
     router_process = test.runRouter(router)
 
     server_process = right.popen(["./rust/test_server/target/debug/test_server", "h2-eth0"], stdout=sys.stdout, stderr=sys.stdout,
-                                       shell=True)
+                                 shell=True)
 
     time.sleep(1)
 
@@ -41,10 +41,10 @@ def run():
     time.sleep(1)
 
     #client_process = right.popen([sys.executable,"./python/test/testing_tools/test_client.py", '11211', right_address,
-     #                             left_address], stdout=sys.stdout, stderr=sys.stdout, shell=True)
+    #                             left_address], stdout=sys.stdout, stderr=sys.stdout, shell=True)
     #time.sleep(1)
 
-    info('Example test completed\n')
+    info('Test 1211 completed: if packet dropped due to invalid checksum then success\n')
     server_process.kill()
     test.stop()
 

@@ -34,7 +34,7 @@ fn receiver_loop(mut rx: Box<DataLinkReceiver>, tx_senders : HashMap<MacAddr,Sen
                 let old_packet = EthernetPacket::new(packet).unwrap();
                 //println!("Received packet: {:?}, data: {:?}", old_packet, old_packet.payload());
                 //buffer is 8 octets longer to account for icmpv6 headers
-                let mut buffer:Vec<u8> = vec![0;old_packet.packet().len()+8];
+                let mut buffer:Vec<u8> = vec![0;old_packet.packet().len()+60];
                 let mut new_packet= MutableEthernetPacket::new(&mut buffer).unwrap();
                 let mac_address = match transform_ethernet_packet(old_packet, &mut new_packet, Arc::clone(&routing)) {
                     Ok(ma) => ma,
@@ -64,9 +64,12 @@ fn transform_ethernet_packet(old_packet: EthernetPacket, new_packet: &mut Mutabl
         None => return Err(format!("Invalid Packet")),
     };
 
+    let mut buffer = vec![0;new_packet.payload().len()];
+    let mut new_ipv6_packet = MutableIpv6Packet::new(&mut buffer).unwrap();
+    new_ipv6_packet.set_payload_length((new_packet.payload().len()-40) as u16);
 
     //println!("Received ipv6 packet: source: {:?} destination: {:?}", ipv6_packet.get_source(), ipv6_packet.get_destination());
-    let (source, destination) = match transform_ipv6_packet(old_ipv6_packet, new_packet, routing) {
+    let (source, destination) = match transform_ipv6_packet(old_ipv6_packet, &mut new_ipv6_packet, routing) {
         Ok(p) => p,
         Err(e) => return Err(e),
     };
@@ -74,13 +77,12 @@ fn transform_ethernet_packet(old_packet: EthernetPacket, new_packet: &mut Mutabl
     new_packet.set_destination(destination);
     new_packet.set_source(source);
     new_packet.set_ethertype(Ipv6);
+    new_packet.set_payload(new_ipv6_packet.packet());
     //println!("Sent packet (ip, mac): to {:?}, from: {:?}, on interface {:?} to {:?}", ipv6_packet.get_destination(), ipv6_packet.get_source(), macs.source, macs.destination);
     return Ok(source);
 }
 
-fn transform_ipv6_packet(old_packet: Ipv6Packet, new_ethernet_packet: & mut MutableEthernetPacket, routing: Arc<Routing>) -> Result<(MacAddr, MacAddr), String> {
-    let mut new_packet = MutableIpv6Packet::new(new_ethernet_packet.payload_mut()).unwrap();
-    new_packet.clone_from(&old_packet);
+fn transform_ipv6_packet(old_packet: Ipv6Packet, new_packet: & mut MutableIpv6Packet, routing: Arc<Routing>) -> Result<(MacAddr, MacAddr), String> {
     //packet length
     let reported_length = old_packet.get_payload_length();
     let actual_length = old_packet.packet().len() as u16 - 40; //40 is the length of the first header
@@ -92,26 +94,22 @@ fn transform_ipv6_packet(old_packet: Ipv6Packet, new_ethernet_packet: & mut Muta
     let hop_limit = old_packet.get_hop_limit();
     let destination = old_packet.get_destination();
     if (hop_limit <= 1) && destination != routing.get_router_address() {
-        let mut new_icmp_packet = MutableIcmpv6Packet::new(new_packet.payload_mut()).unwrap();
+        let mut buffer = vec![0;new_packet.payload().len()];
+        let mut new_icmp_packet = MutableIcmpv6Packet::new(&mut buffer).unwrap();
         let (macs, (source, destination)) = match transform_icmp6_packet((Icmpv6Types::TimeExceeded,0),
         old_packet,&mut new_icmp_packet, routing) {
             Ok(r) => r,
             Err(s) => return Err(s),
         };
+        new_packet.set_payload_length((new_icmp_packet.packet().len()) as u16);
+        new_packet.set_payload(new_icmp_packet.packet());
         new_packet.set_version(6);
         new_packet.set_traffic_class(0);
         new_packet.set_flow_label(0);
         new_packet.set_source(source);
         new_packet.set_destination(destination);
+        println!("Packet dropped, hop limit, and imcpv6 response sent");
         return Ok(macs);
-    } else {
-        let new_hop_limit:u8 = hop_limit - 1_u8;
-        //todo fix this, actually decrementing hop limit works, but results in inexplicable packet drops
-        new_packet.set_hop_limit(new_hop_limit);
-    }
-
-    if old_packet.get_next_header() == Hopopt {
-        //todo implement hop-by-hop - extension
     }
 
     //respond if this is destination
@@ -120,12 +118,15 @@ fn transform_ipv6_packet(old_packet: Ipv6Packet, new_ethernet_packet: & mut Muta
         //todo support more headers - breakout here - fix following code
         if old_packet.get_next_header() != Icmpv6 {
             let payload_length = old_packet.get_payload_length();
-            let mut new_icmp_packet = MutableIcmpv6Packet::new(new_packet.payload_mut()).unwrap();
+            let mut buffer = vec![0;new_packet.payload().len()];
+            let mut new_icmp_packet = MutableIcmpv6Packet::new(&mut buffer).unwrap();
             let (macs, (source, destination)) = match transform_icmp6_packet((Icmpv6Types::ParameterProblem, 40),
                                                                              old_packet,&mut new_icmp_packet, routing) {
                 Ok(r) => r,
                 Err(s) => return Err(s),
             };
+            new_packet.set_payload_length((new_icmp_packet.packet().len()) as u16);
+            new_packet.set_payload(new_icmp_packet.packet());
             new_packet.set_source(source);
             new_packet.set_destination(destination);
             new_packet.set_next_header(Icmpv6);
@@ -141,12 +142,15 @@ fn transform_ipv6_packet(old_packet: Ipv6Packet, new_ethernet_packet: & mut Muta
             None => return Err(format!("Packet's destination is router, unknown type")),
         };
 
-        let mut new_icmp_packet = MutableIcmpv6Packet::new(new_packet.payload_mut()).unwrap();
+        let mut buffer = vec![0;new_packet.payload().len()];
+        let mut new_icmp_packet = MutableIcmpv6Packet::new(&mut buffer).unwrap();
         let (macs, (source, destination)) = match transform_icmp6_packet((old_icmp_packet.get_icmpv6_type(),0),
                                           old_packet,&mut new_icmp_packet, routing) {
             Ok(r) => r,
             Err(s) => return Err(s),
         };
+        new_packet.set_payload_length((new_icmp_packet.packet().len()) as u16);
+        new_packet.set_payload(new_icmp_packet.packet());
         new_packet.set_source(source);
         new_packet.set_destination(destination);
         new_packet.set_next_header(Icmpv6);
@@ -160,7 +164,8 @@ fn transform_ipv6_packet(old_packet: Ipv6Packet, new_ethernet_packet: & mut Muta
     let length = (old_packet.get_payload_length() + 40) as u32;
     let mtu = routing.get_mtu(mac_source);
     if length > mtu {
-        let mut new_icmp_packet = MutableIcmpv6Packet::new(new_packet.payload_mut()).unwrap();
+        let mut buffer = vec![0;new_packet.payload().len()];
+        let mut new_icmp_packet = MutableIcmpv6Packet::new(&mut buffer).unwrap();
         let (macs, (source, destination)) = match transform_icmp6_packet((Icmpv6Types::PacketTooBig,0),
                                                                        old_packet,
                                                                        &mut new_icmp_packet,
@@ -168,6 +173,8 @@ fn transform_ipv6_packet(old_packet: Ipv6Packet, new_ethernet_packet: & mut Muta
             Ok(r) => r,
             Err(s) => return Err(s),
         };
+        new_packet.set_payload_length((new_icmp_packet.packet().len()) as u16);
+        new_packet.set_payload(new_icmp_packet.packet());
         new_packet.set_version(6);
         new_packet.set_traffic_class(0);
         new_packet.set_flow_label(0);
@@ -177,17 +184,33 @@ fn transform_ipv6_packet(old_packet: Ipv6Packet, new_ethernet_packet: & mut Muta
     }
 
     //if standard packet get to here
+    new_packet.clone_from(&old_packet);
+
+
+    if old_packet.get_next_header() == Hopopt {
+        //todo implement hop-by-hop - extension
+    }
+
+    let new_hop_limit:u8 = hop_limit - 1_u8;
+    //todo fix this, actually decrementing hop limit works, but results in inexplicable packet drops
+    new_packet.set_hop_limit(new_hop_limit);
+
     return Ok((mac_source, mac_destination));
 }
 
 //todo may need source and destination here
 fn transform_icmp6_packet((icmpv6_type, parameter): (Icmpv6Type, u32), old_ipv6_packet: Ipv6Packet, new_packet: &mut MutableIcmpv6Packet, routing: Arc<Routing>) -> Result<((MacAddr, MacAddr), (Ipv6Addr, Ipv6Addr)), String> {
-    let old_packet = Icmpv6Packet::new(old_ipv6_packet.payload()).unwrap();
     let source = old_ipv6_packet.get_source();
     let destination = old_ipv6_packet.get_destination();
-    let checksum = icmpv6::checksum(&old_packet, &source, &destination);
-    if checksum != old_packet.get_checksum() {
-        return Err(format!("Invalid ICMPv6 Checksum, packet dropped"));
+    if old_ipv6_packet.get_next_header() == Icmpv6{
+        let old_packet = match Icmpv6Packet::new(old_ipv6_packet.payload()) {
+            Some(p) => p, //todo deal with erroneous next header - maybe move checksum elsewher
+            None => return Err(format!("Erroneous next header - unimplemented"))
+        };
+        let checksum = icmpv6::checksum(&old_packet, &source, &destination);
+        if checksum != old_packet.get_checksum() {
+            return Err(format!("Invalid ICMPv6 Checksum, packet dropped"));
+        }
     }
 
     match icmpv6_type {
@@ -257,7 +280,8 @@ fn shuffle_icmpv6_payload(old_packet: Ipv6Packet, new_packet: &mut MutableIcmpv6
     let buffer = old_packet.packet();
     if (packet_size+8) < mtu {
         let mut new_buffer = vec![0; buffer.len() + 4];
-        new_buffer.clone_from_slice(&buffer[4..]);
+        let new_buffer_slice = &mut new_buffer[4..];
+        new_buffer_slice.clone_from_slice(&buffer);
         new_packet.set_payload(&new_buffer); //due to set_payload() only need to shuffle by 4
     } else {
         let buffer = &buffer[0..(mtu as usize-8)];
