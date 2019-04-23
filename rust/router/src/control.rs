@@ -5,7 +5,7 @@ use std::fmt;
 
 pub struct Routing {
     //hash table for now, maybe move to something more complex
-    routing_table:HashMap<Ipv6Addr, InterfaceMacAddrs>,
+    routing_table:HashMap<Ipv6Addr, (MacAddr, MacAddr)>,
     mtu_table:HashMap<MacAddr, u32>,
     default_route:Ipv6Addr,
     router_address:Ipv6Addr,
@@ -75,16 +75,17 @@ impl Routing {
                 Ok(a) => a,
                 Err(e) => {println!("Invalid MAC Address: {}", destination_str); Err(e).unwrap()},
             };
-            let macs = InterfaceMacAddrs::new(source, destination);
+            let macs = (source, destination);
             routing_table.insert(ipv6,macs);
         }
 
         Routing { routing_table, mtu_table, default_route, router_address}
     }
 
-    pub fn add_route(&mut self, ip6:Ipv6Addr, mac:InterfaceMacAddrs) {
+    //source, destination
+    pub fn add_route(&mut self, ip6:Ipv6Addr, macs: (MacAddr, MacAddr)) {
         if ip6 != self.default_route {
-            self.routing_table.insert(ip6, mac); //todo maybe do something with the result
+            self.routing_table.insert(ip6, macs); //todo maybe do something with the result
         } else {
             panic!("Can't add/update default route with add_route()")
         }
@@ -93,11 +94,11 @@ impl Routing {
     //todo add routers ip as a special case
     //todo update_default_route - or maybe rethink the whole default route semantics
 
-    pub fn get_route(&self, ip6:Ipv6Addr) -> &InterfaceMacAddrs {
+    pub fn get_route(&self, ip6:Ipv6Addr) -> (MacAddr, MacAddr) {
         match self.routing_table.get(&ip6) {
-            Some(macs) => {//println!("Address looked up: {:?}, result: {:?}", ip6, macs);
-                                            macs},
-            None => self.routing_table.get(&self.default_route).unwrap()
+            Some((source, destination)) => {//println!("Address looked up: {:?}, result: {:?}", ip6, macs);
+                (source.clone(), destination.clone())},
+            None => self.routing_table.get(&self.default_route).unwrap().clone()
         }
 
     }
@@ -117,25 +118,6 @@ impl Routing {
 impl fmt::Debug for Routing {
     fn fmt (&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "Routing Table:\n{:?}", self.routing_table)
-    }
-}
-
-//pair of mac addresses to represent an interface
-
-pub struct InterfaceMacAddrs {
-    pub source: MacAddr,
-    pub destination: MacAddr,
-}
-
-impl InterfaceMacAddrs {
-    pub fn new(source: MacAddr, destination: MacAddr) -> InterfaceMacAddrs {
-        InterfaceMacAddrs{source, destination}
-    }
-}
-
-impl fmt::Debug for InterfaceMacAddrs {
-    fn fmt (&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "({:?},{:?})", self.source, self.destination)
     }
 }
 
