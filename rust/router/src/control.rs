@@ -83,13 +83,14 @@ impl Routing {
     }
 
     //source, destination
+    /*
     pub fn add_route(&mut self, ip6:Ipv6Addr, macs: (MacAddr, MacAddr)) {
         if ip6 != self.default_route {
             self.routing_table.insert(ip6, macs); //todo maybe do something with the result
         } else {
             panic!("Can't add/update default route with add_route()")
         }
-    }
+    }*/
 
     //todo add routers ip as a special case
     //todo update_default_route - or maybe rethink the whole default route semantics
