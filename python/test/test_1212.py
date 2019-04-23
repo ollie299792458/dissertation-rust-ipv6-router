@@ -22,7 +22,7 @@ def run():
     test.addLink(right, router, addr1='00:00:00:00:02:00', addr2='00:00:00:00:03:02')
 
     test.start()
-    info('Example test starting\n')
+    info('Test 1212 starting\n')
 
     #default.cmdPrint("ifconfig")
 
@@ -44,7 +44,7 @@ def run():
      #                             left_address], stdout=sys.stdout, stderr=sys.stdout, shell=True)
     #time.sleep(1)
 
-    info('Example test completed\n')
+    info('Test 1212 completed: if unknown/unimplemented icmpv6 packet dropped then success\n')
     server_process.kill()
     test.stop()
 

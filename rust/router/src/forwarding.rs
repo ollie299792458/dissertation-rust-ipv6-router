@@ -269,7 +269,7 @@ fn transform_icmp6_packet((icmpv6_type, parameter): (Icmpv6Type, u32), old_ipv6_
             new_packet.set_checksum(icmpv6::checksum(&Icmpv6Packet::new(new_packet.payload()).unwrap(), &new_source, &new_destination));
             return Ok((routing.get_route(source), (new_source, new_destination)))
         },
-        _ => return Err(format!("Unhandled ICMP message type")),
+        _ => return Err(format!("Unhandled/Unknown ICMP message type")),
     };
 }
 
