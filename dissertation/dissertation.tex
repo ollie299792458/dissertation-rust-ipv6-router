@@ -4,6 +4,7 @@
 \usepackage[margin=25mm]{geometry}  % adjusts page layout
 \usepackage{graphicx}  % allows inclusion of PDF, PNG and JPG images
 \usepackage{verbatim}
+\usepackage{pdfpages} % allows inclusion of non tex project proposal
 \usepackage{docmute}   % only needed to allow inclusion of proposal.tex
 
 \raggedbottom                           % try to avoid widows and orphans
@@ -25,14 +26,14 @@
 
 \pagestyle{empty}
 
-\rightline{\LARGE \textbf{Martin Richards}}
+\rightline{\LARGE \textbf{Oliver Black}}
 
 \vspace*{60mm}
 \begin{center}
 \Huge
-\textbf{How to write a dissertation in \LaTeX} \\[5mm]
+\textbf{Software IPv6 Router in Rust} \\[5mm]
 Computer Science Tripos -- Part II \\[5mm]
-St John's College \\[5mm]
+Selwyn College \\[5mm]
 \today  % today's date
 \end{center}
 
@@ -45,14 +46,14 @@ St John's College \\[5mm]
 
 {\large
 \begin{tabular}{ll}
-Name:               & \bf Martin Richards                       \\
-College:            & \bf St John's College                     \\
-Project Title:      & \bf How to write a dissertation in \LaTeX \\
+Name:               & \bf Oliver Black                      \\
+College:            & \bf Selwyn College                     \\
+Project Title:      & \bf Software IPv6 Router in Rust \\
 Examination:        & \bf Computer Science Tripos -- Part II, July 2001  \\
-Word Count:         & \bf 1587\footnotemark[1]
+Word Count:         & \bf "FIX ME" \footnotemark[1]
                       (well less than the 12000 limit)  \\
-Project Originator: & Dr M.~Richards                    \\
-Supervisor:         & Dr Markus Kuhn                    \\ 
+Project Originator: & Oliver Black \& Richard Watts      \\
+Supervisor:         & Andrew Moore                   \\ 
 \end{tabular}
 }
 \footnotetext[1]{This word count was computed
@@ -62,6 +63,8 @@ by \texttt{detex diss.tex | tr -cd '0-9A-Za-z $\tt\backslash$n' | wc -w}
 
 
 \section*{Original Aims of the Project}
+
+To implement a simple IPv6 router using Rust that behaves as specified in the IPv6 RFCs
 
 To write a demonstration dissertation\footnote{A normal footnote without the
 complication of being in a table.} using \LaTeX\ to save
@@ -410,6 +413,6 @@ been helpful and saved you time.
 
 \chapter{Project Proposal}
 
-\input{proposal}
+\includepdf[page=-]{proposal}
 
 \end{document}
