@@ -28,8 +28,8 @@ def run():
 
     router_process = test.runRouter(router)
 
-    server_process = right.popen(["./rust/test_server/target/debug/test_server", "h2-eth0"], stdout=sys.stdout, stderr=sys.stdout,
-                                       shell=True)
+    #server_process = left.popen(["./rust/test_server/target/debug/test_server", "h1-eth0"], stdout=sys.stdout, stderr=sys.stdout,
+     #                                  shell=True)
 
     time.sleep(1)
 
@@ -45,7 +45,7 @@ def run():
     #time.sleep(1)
 
     info('Test 1212 completed: if unknown/unimplemented icmpv6 packet dropped then success\n')
-    server_process.kill()
+    #server_process.kill()
     test.stop()
 
 

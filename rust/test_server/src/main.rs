@@ -22,7 +22,7 @@ fn main() {
         .next()
         .unwrap();
 
-    let (tx, mut rx) = match datalink::channel(&interface, Default::default()) {
+    let (_, mut rx) = match datalink::channel(&interface, Default::default()) {
         Ok(Ethernet(itx, irx)) => (itx, irx),
         Ok(_) => panic!("Unhandled channel type"),
         Err(e) => panic!("An error occurred when creating the datalink channel: {}", e)

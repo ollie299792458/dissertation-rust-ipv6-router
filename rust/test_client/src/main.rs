@@ -1,16 +1,19 @@
-use std::env;
+use std::{env, thread};
 
 use pnet::datalink::{self, NetworkInterface};
 use pnet::datalink::Channel::Ethernet;
+use pnet::datalink::DataLinkReceiver;
 use pnet::packet::{Packet,MutablePacket};
-use pnet::packet::ethernet::MutableEthernetPacket;
+use pnet::packet::ethernet::{MutableEthernetPacket, EthernetPacket};
 use pnet::packet::ethernet::EtherTypes::Ipv6;
 use pnet::packet::ip::IpNextHeaderProtocol;
-use pnet::packet::ipv6::MutableIpv6Packet;
+use pnet::packet::ipv6::{MutableIpv6Packet,Ipv6Packet};
 use pnet::packet::icmpv6;
 use pnet::packet::icmpv6::{MutableIcmpv6Packet, Icmpv6Packet, Icmpv6Types, Icmpv6Code, Icmpv6Type};
 use std::net::Ipv6Addr;
 use pnet::util::MacAddr;
+use std::thread::sleep;
+use std::time::Duration;
 
 fn main() {
     let interface_name = env::args().nth(1).unwrap();
@@ -35,7 +38,7 @@ fn main() {
         .next()
         .unwrap();
 
-    let (mut tx, _) = match datalink::channel(&interface, Default::default()) {
+    let (mut tx, rx) = match datalink::channel(&interface, Default::default()) {
         Ok(Ethernet(itx, irx)) => (itx, irx),
         Ok(_) => panic!("Unhandled channel type"),
         Err(e) => panic!("An error occurred when creating the datalink channel: {}", e)
@@ -89,8 +92,21 @@ fn main() {
         tx.send_to(packet.packet(), None);
     }
 
+    if test == "1214" {
+        let thread = thread::spawn(|| start_server_icmpv6(rx));
+        sleep(Duration::from_millis(100));
+        println!("Sending packets");
+        let mut buffer:Vec<u8> = vec![0;150];
+        let mut packet= MutableEthernetPacket::new(&mut buffer).unwrap();
+        get_packet(&mut packet,interface.mac_address(), destination_mac, source_ip, destination_ip);
+        let mut payload = MutableIpv6Packet::new(packet.payload_mut()).unwrap();
+        get_1214_packet(&mut payload);
+        tx.send_to(packet.packet(), None);
+        println!("Packet sent");
+        match thread.join() {_=> ()};
+    }
 
-    println!("Packets sent");
+    println!("Packet(s) sent");
 }
 
 fn get_11211_packet(packet: &mut MutableIpv6Packet, size: u16) {
@@ -155,6 +171,11 @@ fn get_1212_packet(packet: &mut MutableIpv6Packet) {
     packet.set_payload_length(payload_length as u16);
 }
 
+fn get_1214_packet(packet: &mut MutableIpv6Packet) {
+    packet.set_next_header(IpNextHeaderProtocol::new(59));
+
+    packet.set_payload_length(96);
+}
 
 fn get_ipv6_packet(packet: &mut MutableIpv6Packet, source:Ipv6Addr, destination:Ipv6Addr) {
     packet.set_version(6);
@@ -174,4 +195,24 @@ fn get_packet(packet: &mut MutableEthernetPacket, source: MacAddr, destination: 
 
     let mut payload = MutableIpv6Packet::new(packet.payload_mut()).unwrap();
     get_ipv6_packet(&mut payload, source_ip, destination_ip);
+}
+
+fn start_server_icmpv6(mut rx: Box<DataLinkReceiver>) {
+    println!("Client's server started");
+
+    loop {
+        match rx.next() {
+            Ok(packet) => {
+                let eth_packet = EthernetPacket::new(packet).unwrap();
+                let ipv6_packet = Ipv6Packet::new(eth_packet.payload()).unwrap();
+                let icmpv6_packet = Icmpv6Packet::new(ipv6_packet.payload()).unwrap();
+                println!("From:{:?}, Details:{:?}, Payload:{:?}",ipv6_packet.get_source(), icmpv6_packet, icmpv6_packet.payload());
+                //println!("{:X?}",packet);
+            }
+            Err(e)=> {
+                println!("Server: {:?}",e);
+                continue;
+            }
+        }
+    }
 }

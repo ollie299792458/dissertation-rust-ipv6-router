@@ -223,35 +223,36 @@ fn transform_icmp6_packet((icmpv6_type, parameter): (Icmpv6Type, u32), old_ipv6_
             new_packet.set_checksum(icmpv6::checksum(&Icmpv6Packet::new(new_packet.payload()).unwrap(), &new_source, &new_destination));
             return Ok((routing.get_route(new_destination), (new_source, new_destination)));
         }
-        Icmpv6Types::PacketTooBig => {
+        Icmpv6Types::ParameterProblem => {
             let new_source = routing.get_router_address();
             let new_destination = source;
             shuffle_icmpv6_payload(old_ipv6_packet, new_packet,new_source, Arc::clone(&routing));
             new_packet.set_icmpv6_type(icmpv6_type);
             new_packet.set_icmpv6_code(Icmpv6Code::new(1)); //todo support more codes
             let payload = &mut new_packet.payload_mut(); //set 4 octets to mtu
-            let (mac_source, mac_destination) = routing.get_route(destination);
+            let (mac_source, mac_destination) = routing.get_route(new_destination);
             let pointer = parameter;
-            payload[0] = (pointer / (2 ^ 24)) as u8;
-            payload[1] = (pointer / (2 ^ 16)) as u8;;
-            payload[2] = (pointer / (2 ^ 8)) as u8;;
-            payload[3] = (pointer % (2 ^ 8)) as u8;;
+            payload[0] = (pointer / (1 << 24)) as u8;
+            payload[1] = (pointer / (1 << 16)) as u8;
+            payload[2] = (pointer / (1 << 8)) as u8;
+            payload[3] = (pointer % (1 << 8)) as u8;
             new_packet.set_checksum(icmpv6::checksum(&Icmpv6Packet::new(new_packet.payload()).unwrap(), &new_source, &new_destination));
             return Ok(((mac_source, mac_destination), (new_source, new_destination)))
         },
-        Icmpv6Types::ParameterProblem => {
+        Icmpv6Types::PacketTooBig => {
             let new_source = routing.get_router_address();
             let new_destination = source;
             shuffle_icmpv6_payload(old_ipv6_packet, new_packet,new_source, Arc::clone(&routing));
             new_packet.set_icmpv6_type(icmpv6_type);
             new_packet.set_icmpv6_code(Icmpv6Code::new(0));
             let payload = &mut new_packet.payload_mut(); //set 4 octets to mtu
-            let (mac_source, mac_destination) = routing.get_route(destination);
-            let mtu = routing.get_mtu(mac_source);
-            payload[0] = (mtu / (2 ^ 24)) as u8;
-            payload[1] = (mtu / (2 ^ 16)) as u8;;
-            payload[2] = (mtu / (2 ^ 8)) as u8;;
-            payload[3] = (mtu % (2 ^ 8)) as u8;;
+            let (mac_source, mac_destination) = routing.get_route(new_destination);
+            let (old_mac_source,_) = routing.get_route(destination);
+            let mtu = routing.get_mtu(old_mac_source);
+            payload[0] = (mtu / (1 << 24)) as u8;
+            payload[1] = (mtu / (1 << 16)) as u8;
+            payload[2] = (mtu / (1 << 8)) as u8;
+            payload[3] = (mtu % (1 << 8)) as u8;
             new_packet.set_checksum(icmpv6::checksum(&Icmpv6Packet::new(new_packet.payload()).unwrap(), &new_source, &new_destination));
             return Ok(((mac_source, mac_destination), (new_source, new_destination)))
         },
@@ -267,7 +268,7 @@ fn transform_icmp6_packet((icmpv6_type, parameter): (Icmpv6Type, u32), old_ipv6_
             payload[2] = 0;
             payload[3] = 0;
             new_packet.set_checksum(icmpv6::checksum(&Icmpv6Packet::new(new_packet.payload()).unwrap(), &new_source, &new_destination));
-            return Ok((routing.get_route(source), (new_source, new_destination)))
+            return Ok((routing.get_route(new_destination), (new_source, new_destination)))
         },
         _ => return Err(format!("Unhandled/Unknown ICMP message type")),
     };

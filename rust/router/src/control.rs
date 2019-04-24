@@ -35,7 +35,7 @@ impl Routing {
         //get hashmap entries "IPv6@MAC,MAC" (inc a line for default route) - lines starting with "mtu" are mtuMTU@ROUTER_MAC lines
         for line in lines {
             if line =="" {
-                break;
+                continue;
             }
             if line.starts_with("mtu") {
                 if line == "" {
@@ -56,27 +56,37 @@ impl Routing {
                     Err(e) => {println!("Invalid MAC Addresss: {}", mac_str); Err(e).unwrap()}
                 };
                 mtu_table.insert(mac, mtu);
+            } else {
+                let mut addrs = line.split("@");
+                let ipv6_str = addrs.next().unwrap();
+                let ipv6 = match ipv6_str.parse::<Ipv6Addr>() {
+                    Ok(a) => a,
+                    Err(e) => {
+                        println!("Invalid IPv6 Address: {}", ipv6_str);
+                        Err(e).unwrap()
+                    },
+                };
+                let mac_addrs_str = addrs.next().unwrap();
+                let mut mac_addrs = mac_addrs_str.split(",");
+                let source_str = mac_addrs.next().unwrap();
+                let destination_str = mac_addrs.next().unwrap();
+                let source = match source_str.parse::<MacAddr>() {
+                    Ok(a) => a,
+                    Err(e) => {
+                        println!("Invalid MAC Address: {}", source_str);
+                        Err(e).unwrap()
+                    },
+                };
+                let destination = match destination_str.parse::<MacAddr>() {
+                    Ok(a) => a,
+                    Err(e) => {
+                        println!("Invalid MAC Address: {}", destination_str);
+                        Err(e).unwrap()
+                    },
+                };
+                let macs = (source, destination);
+                routing_table.insert(ipv6, macs);
             }
-            let mut addrs = line.split("@");
-            let ipv6_str = addrs.next().unwrap();
-            let ipv6 = match ipv6_str.parse::<Ipv6Addr>() {
-                Ok(a) => a,
-                Err(e) => {println!("Invalid IPv6 Address: {}", ipv6_str); Err(e).unwrap()},
-            };
-            let mac_addrs_str = addrs.next().unwrap();
-            let mut mac_addrs = mac_addrs_str.split(",");
-            let source_str = mac_addrs.next().unwrap();
-            let destination_str = mac_addrs.next().unwrap();
-            let source = match source_str.parse::<MacAddr>() {
-                Ok(a) => a,
-                Err(e) => {println!("Invalid MAC Address: {}", source_str); Err(e).unwrap()},
-            };
-            let destination = match destination_str.parse::<MacAddr>(){
-                Ok(a) => a,
-                Err(e) => {println!("Invalid MAC Address: {}", destination_str); Err(e).unwrap()},
-            };
-            let macs = (source, destination);
-            routing_table.insert(ipv6,macs);
         }
 
         Routing { routing_table, mtu_table, default_route, router_address}

@@ -196,7 +196,7 @@ class TestFramework(Mininet):
         return ploss
 
     # todo run on a specific node's interfaces
-    def runRouter(self, router, **args):
+    def runRouter(self, router, appended="",**args):
         info("Starting router\n")
 
         file_location = "./rust/router/resource/routing.txt"
@@ -222,6 +222,8 @@ class TestFramework(Mininet):
                 ))
                 f.write(solicited_multicast_address +"@"+self.__mac_pairs[router.name+host.name]+"\n")
 
+
+        f.write(appended)
         f.close()
 
         #start router
