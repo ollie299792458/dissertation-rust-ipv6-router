@@ -15,6 +15,8 @@ use pnet::util::MacAddr;
 use std::thread::sleep;
 use std::time::Duration;
 
+//code coverage calculation 30 untested, 736 total ~95% code coverage
+
 fn main() {
     let interface_name = env::args().nth(1).unwrap();
 

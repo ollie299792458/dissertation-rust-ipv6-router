@@ -131,4 +131,3 @@ impl fmt::Debug for Routing {
         write!(f, "Routing Table:\n{:?}", self.routing_table)
     }
 }
-
