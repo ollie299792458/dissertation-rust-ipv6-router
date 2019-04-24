@@ -108,6 +108,18 @@ fn main() {
         tx.send_to(packet.packet(), None);
         println!("Packet sent");
         match thread.join() {_=> ()};
+    }else if test == "1216" {
+        let thread = thread::spawn(|| start_server_icmpv6(rx));
+        sleep(Duration::from_millis(100));
+        println!("Sending packets");
+        let mut buffer:Vec<u8> = vec![0;70];
+        let mut packet= MutableEthernetPacket::new(&mut buffer).unwrap();
+        get_packet(&mut packet,interface.mac_address(), destination_mac, source_ip, destination_ip);
+        let mut payload = MutableIpv6Packet::new(packet.payload_mut()).unwrap();
+        get_1216_packet(&mut payload);
+        tx.send_to(packet.packet(), None);
+        println!("Packet sent");
+        match thread.join() {_=> ()};
     }
 
     println!("Packet(s) sent");
@@ -179,6 +191,33 @@ fn get_1214_packet(packet: &mut MutableIpv6Packet) {
     packet.set_next_header(IpNextHeaderProtocol::new(59));
 
     packet.set_payload_length(96);
+}
+
+fn get_1216_packet(packet: &mut MutableIpv6Packet) {
+    packet.set_next_header(IpNextHeaderProtocol::new(58));
+    packet.set_payload_length(20);
+    {
+        let mut icmp_packet = MutableIcmpv6Packet::new(packet.payload_mut()).unwrap();
+        icmp_packet.set_icmpv6_type(Icmpv6Type::new(128));
+        icmp_packet.set_icmpv6_code(Icmpv6Code::new(0));
+        let payload = &mut icmp_packet.payload_mut();
+        payload[0] = 1;
+        payload[1] = 2;
+        payload[2] = 3;
+        payload[3] = 4;
+    }
+    let checksum ;
+    let payload_length ;
+    {
+        let icmp_packet = Icmpv6Packet::new(packet.payload()).unwrap();
+        checksum = icmpv6::checksum(&icmp_packet, &packet.get_source(), &packet.get_destination());
+        payload_length = icmp_packet.packet().len();
+    }
+    {
+        let mut icmp_packet = MutableIcmpv6Packet::new(packet.payload_mut()).unwrap();
+        icmp_packet.set_checksum(checksum);
+    }
+    packet.set_payload_length(payload_length as u16);
 }
 
 fn get_ipv6_packet(packet: &mut MutableIpv6Packet, source:Ipv6Addr, destination:Ipv6Addr) {

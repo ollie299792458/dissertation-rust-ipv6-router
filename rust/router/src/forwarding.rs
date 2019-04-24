@@ -214,19 +214,26 @@ fn transform_icmp6_packet((icmpv6_type, parameter): (Icmpv6Type, u32), old_ipv6_
     }
 
     match icmpv6_type {
-        Icmpv6Types::EchoReply => {
+        Icmpv6Types::EchoRequest => {
             let new_source = routing.get_router_address();
             let new_destination = source;
-            shuffle_icmpv6_payload(old_ipv6_packet, new_packet,new_source, Arc::clone(&routing));
-            new_packet.set_icmpv6_type(icmpv6_type);
+            shuffle_icmpv6_payload(&old_ipv6_packet, new_packet, new_source, Arc::clone(&routing));
+            new_packet.set_icmpv6_type(Icmpv6Types::EchoReply);
             new_packet.set_icmpv6_code(Icmpv6Code::new(0));
+            let payload = &mut new_packet.payload_mut();
+            let old_packet = Icmpv6Packet::new(old_ipv6_packet.payload()).unwrap();
+            let old_payload = old_packet.payload();
+            payload[0] = old_payload[0];
+            payload[1] = old_payload[1];
+            payload[2] = old_payload[2];
+            payload[3] = old_payload[3];
             new_packet.set_checksum(icmpv6::checksum(&Icmpv6Packet::new(new_packet.payload()).unwrap(), &new_source, &new_destination));
             return Ok((routing.get_route(new_destination), (new_source, new_destination)));
         }
         Icmpv6Types::ParameterProblem => {
             let new_source = routing.get_router_address();
             let new_destination = source;
-            shuffle_icmpv6_payload(old_ipv6_packet, new_packet,new_source, Arc::clone(&routing));
+            shuffle_icmpv6_payload(&old_ipv6_packet, new_packet,new_source, Arc::clone(&routing));
             new_packet.set_icmpv6_type(icmpv6_type);
             new_packet.set_icmpv6_code(Icmpv6Code::new(1)); //todo support more codes
             let payload = &mut new_packet.payload_mut(); //set 4 octets to mtu
@@ -242,7 +249,7 @@ fn transform_icmp6_packet((icmpv6_type, parameter): (Icmpv6Type, u32), old_ipv6_
         Icmpv6Types::PacketTooBig => {
             let new_source = routing.get_router_address();
             let new_destination = source;
-            shuffle_icmpv6_payload(old_ipv6_packet, new_packet,new_source, Arc::clone(&routing));
+            shuffle_icmpv6_payload(&old_ipv6_packet, new_packet,new_source, Arc::clone(&routing));
             new_packet.set_icmpv6_type(icmpv6_type);
             new_packet.set_icmpv6_code(Icmpv6Code::new(0));
             let payload = &mut new_packet.payload_mut(); //set 4 octets to mtu
@@ -259,7 +266,7 @@ fn transform_icmp6_packet((icmpv6_type, parameter): (Icmpv6Type, u32), old_ipv6_
         Icmpv6Types::TimeExceeded => {
             let new_source = routing.get_router_address();
             let new_destination = source;
-            shuffle_icmpv6_payload(old_ipv6_packet, new_packet,new_source, Arc::clone(&routing));
+            shuffle_icmpv6_payload(&old_ipv6_packet, new_packet,new_source, Arc::clone(&routing));
             new_packet.set_icmpv6_type(icmpv6_type);
             new_packet.set_icmpv6_code(Icmpv6Code::new(0));
             let payload = &mut new_packet.payload_mut(); //set 4 octets to 0
@@ -274,7 +281,7 @@ fn transform_icmp6_packet((icmpv6_type, parameter): (Icmpv6Type, u32), old_ipv6_
     };
 }
 
-fn shuffle_icmpv6_payload(old_packet: Ipv6Packet, new_packet: &mut MutableIcmpv6Packet, source: Ipv6Addr, routing: Arc<Routing>) {
+fn shuffle_icmpv6_payload(old_packet: &Ipv6Packet, new_packet: &mut MutableIcmpv6Packet, source: Ipv6Addr, routing: Arc<Routing>) {
     let (source_mac, _) = routing.get_route(source);
     let packet_size = old_packet.get_payload_length() as u32;
     let mtu = routing.get_mtu(source_mac);

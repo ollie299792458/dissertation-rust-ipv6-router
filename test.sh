@@ -35,6 +35,9 @@ case $1 in
     1215)
         python -m python.test.test_1215
         ;;
+    1216)
+        python -m python.test.test_1216
+        ;;
     ex) #example test of ipv6 wrapper
         python -m python.test.test_example
         ;;

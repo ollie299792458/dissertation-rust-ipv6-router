@@ -33,8 +33,8 @@ def run():
 
     #time.sleep(1)
 
-    server_process = left.popen(["./rust/test_client/target/debug/test_client", "h1-eth0", "1215",
-                                 '00:00:00:00:01:00',left_address, right_address], stdout=sys.stdout, stderr=sys.stdout,
+    server_process = left.popen(["./rust/test_client/target/debug/test_client", "h1-eth0", "1216",
+                                 '00:00:00:00:01:00',left_address, router_address], stdout=sys.stdout, stderr=sys.stdout,
                                 shell=True)
 
     time.sleep(2)

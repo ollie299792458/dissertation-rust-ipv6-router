@@ -22,7 +22,7 @@ def run():
     test.addLink(right, router, addr1='00:00:00:00:02:00', addr2='00:00:00:00:03:02')
 
     test.start()
-    info('Test 1215 starting\n')
+    info('Test 1216 starting\n')
 
     #default.cmdPrint("ifconfig")
 
@@ -33,8 +33,8 @@ def run():
 
     #time.sleep(1)
 
-    server_process = left.popen(["./rust/test_client/target/debug/test_client", "h1-eth0", "1215",
-                                 '00:00:00:00:01:00',left_address, right_address], stdout=sys.stdout, stderr=sys.stdout,
+    server_process = left.popen(["./rust/test_client/target/debug/test_client", "h1-eth0", "1216",
+                                 '00:00:00:00:01:00',left_address, router_address], stdout=sys.stdout, stderr=sys.stdout,
                                 shell=True)
 
     time.sleep(2)
@@ -43,7 +43,7 @@ def run():
      #                             left_address], stdout=sys.stdout, stderr=sys.stdout, shell=True)
     #time.sleep(1)
 
-    info('Test 1215 completed: If ICMPv6 packet type 3, code 0, octets 0-3 0 received then success\n')
+    info('Test 1216 completed: If ICMPv6 packet type 129, code 0, octets 0-3 1,2,3,4 received then success\n')
     server_process.kill()
     test.stop()
 
