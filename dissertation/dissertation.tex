@@ -51,7 +51,7 @@ College:            & \bf Selwyn College                     \\
 Project Title:      & \bf Software IPv6 Router in Rust \\
 Examination:        & \bf Computer Science Tripos -- Part II, July 2001  \\
 Word Count:         & \bf "FIX ME" \footnotemark[1]
-                      (well less than the 12000 limit)  \\
+                       \\
 Project Originator: & Oliver Black \& Richard Watts      \\
 Supervisor:         & Andrew Moore                   \\ 
 \end{tabular}
@@ -64,7 +64,7 @@ by \texttt{detex diss.tex | tr -cd '0-9A-Za-z $\tt\backslash$n' | wc -w}
 
 \section*{Original Aims of the Project}
 
-To implement a simple IPv6 router using Rust that behaves as specified in the IPv6 RFCs
+To implement a simple IPv6 router using Rust that behaves as specified in the IPv6 RFCs \cite{ipv6_rfc}
 
 To write a demonstration dissertation\footnote{A normal footnote without the
 complication of being in a table.} using \LaTeX\ to save
@@ -387,8 +387,12 @@ been helpful and saved you time.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % the bibliography
+\begin{thebibliography}{1}
 \addcontentsline{toc}{chapter}{Bibliography}
-\bibliography{refs}
+
+\bibitem{ipv6_rfc} Internet Protocol, Version 6 (IPv6) Specification, RFC 8200, July 2017 
+
+\end{thebibliography}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % the appendices

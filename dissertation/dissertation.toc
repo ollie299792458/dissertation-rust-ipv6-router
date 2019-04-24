@@ -13,11 +13,11 @@
 \contentsline {section}{\numberline {4.1}Printing and binding}{17}{section.4.1}
 \contentsline {section}{\numberline {4.2}Further information}{17}{section.4.2}
 \contentsline {chapter}{\numberline {5}Conclusion}{19}{chapter.5}
-\contentsline {chapter}{Bibliography}{19}{chapter.5}
-\contentsline {chapter}{\numberline {A}Latex source}{21}{appendix.A}
-\contentsline {section}{\numberline {A.1}diss.tex}{21}{section.A.1}
-\contentsline {section}{\numberline {A.2}proposal.tex}{21}{section.A.2}
-\contentsline {chapter}{\numberline {B}Makefile}{23}{appendix.B}
-\contentsline {section}{\numberline {B.1}makefile}{23}{section.B.1}
-\contentsline {section}{\numberline {B.2}refs.bib}{23}{section.B.2}
-\contentsline {chapter}{\numberline {C}Project Proposal}{25}{appendix.C}
+\contentsline {chapter}{Bibliography}{21}{chapter*.9}
+\contentsline {chapter}{\numberline {A}Latex source}{23}{appendix.A}
+\contentsline {section}{\numberline {A.1}diss.tex}{23}{section.A.1}
+\contentsline {section}{\numberline {A.2}proposal.tex}{23}{section.A.2}
+\contentsline {chapter}{\numberline {B}Makefile}{25}{appendix.B}
+\contentsline {section}{\numberline {B.1}makefile}{25}{section.B.1}
+\contentsline {section}{\numberline {B.2}refs.bib}{25}{section.B.2}
+\contentsline {chapter}{\numberline {C}Project Proposal}{27}{appendix.C}
