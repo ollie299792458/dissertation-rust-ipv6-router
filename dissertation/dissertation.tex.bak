@@ -27,8 +27,6 @@
 
 \rightline{\LARGE \textbf{Oliver Black}}
 
-\addcontentsline{toc}{chapter}{Cover Sheet}
-
 \vspace*{60mm}
 \begin{center}
 \Huge
@@ -39,7 +37,6 @@ Selwyn College \\[5mm]
 \end{center}
 
 \newpage
-\addcontentsline{toc}{chapter}{Declaration of Originality}
 \section*{Declaration of Originality}
 
 I, Oliver Black of Selwyn College, being a candidate for Part II of 
@@ -61,7 +58,6 @@ extent for a comparable purpose.
 \pagestyle{plain}
 
 \chapter*{Proforma}
-\addcontentsline{toc}{chapter}{Proforma}
 
 {\large
 \begin{tabular}{ll}
@@ -95,11 +91,7 @@ None. TODO fill in
 
 \tableofcontents
 
-\addcontentsline{toc}{chapter}{Table of Contents}
-
-
 \listoffigures
-\addcontentsline{toc}{chapter}{List of Figures}
 
 \newpage
 \section*{Acknowledgements}
@@ -150,7 +142,7 @@ Most of my research time however was spent reading RFCs related to IPv6.  The ma
 
 \bigskip
 
-The IPv6 Addressing RFC\cite{ipv6_rfc_adr} contains all you could want to know about the various kinds of IPv6 addresses. However, it is mainly just a list of address ranges and whether they have any special behaviour, it doesn't affect the design of a router much.  I also consulted a few more RFCs related to features that didn't \textit{need} to be implemented by an IPv6 router, more details on those can be found Under 
+The IPv6 Addressing RFC\cite{ipv6_rfc_adr} contains all you could want to know about the various kinds of IPv6 addresses. However, it is mainly just a list of address ranges and whether they have any special behaviour, it doesn't affect the design of a router much.  I also consulted a few more RFCs related to features that didn't \textit{need} to be implemented by an IPv6 router
 
 \section{Design}
 
@@ -205,12 +197,10 @@ More detail in implementation on mininet
 \chapter{Requirements}
 
 
-
 \includepdf[page=-]{requirements}
 
 
-\chapter*{Project Proposal}
-\addcontentsline{toc}{chapter}{Project Proposal}
+\chapter{Project Proposal}
 
 \includepdf[page=-]{proposal}
 
