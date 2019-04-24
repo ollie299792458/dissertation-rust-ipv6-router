@@ -57,9 +57,7 @@ fn main() {
         let mut payload = MutableIpv6Packet::new(packet.payload_mut()).unwrap();
         get_11211_packet(&mut payload, 10);
         tx.send_to(packet.packet(), None);
-    }
-
-    if test == "11212" {
+    } else if test == "11212" {
         let mut buffer:Vec<u8> = vec![0;54];
         let mut packet= MutableEthernetPacket::new(&mut buffer).unwrap();
         get_packet(&mut packet,interface.mac_address(), destination_mac, source_ip, destination_ip);
@@ -72,27 +70,21 @@ fn main() {
         let mut payload = MutableIpv6Packet::new(packet.payload_mut()).unwrap();
         get_11212_packet(&mut payload, 10);
         tx.send_to(packet.packet(), None);
-    }
-
-    if test == "1211" {
+    } else if test == "1211" {
         let mut buffer:Vec<u8> = vec![0;70];
         let mut packet= MutableEthernetPacket::new(&mut buffer).unwrap();
         get_packet(&mut packet,interface.mac_address(), destination_mac, source_ip, destination_ip);
         let mut payload = MutableIpv6Packet::new(packet.payload_mut()).unwrap();
         get_1211_packet(&mut payload);
         tx.send_to(packet.packet(), None);
-    }
-
-    if test == "1212" {
+    } else if test == "1212" {
         let mut buffer:Vec<u8> = vec![0;70];
         let mut packet= MutableEthernetPacket::new(&mut buffer).unwrap();
         get_packet(&mut packet,interface.mac_address(), destination_mac, source_ip, destination_ip);
         let mut payload = MutableIpv6Packet::new(packet.payload_mut()).unwrap();
         get_1212_packet(&mut payload);
         tx.send_to(packet.packet(), None);
-    }
-
-    if test == "1214" {
+    } else if test == "1214" {
         let thread = thread::spawn(|| start_server_icmpv6(rx));
         sleep(Duration::from_millis(100));
         println!("Sending packets");
@@ -101,6 +93,18 @@ fn main() {
         get_packet(&mut packet,interface.mac_address(), destination_mac, source_ip, destination_ip);
         let mut payload = MutableIpv6Packet::new(packet.payload_mut()).unwrap();
         get_1214_packet(&mut payload);
+        tx.send_to(packet.packet(), None);
+        println!("Packet sent");
+        match thread.join() {_=> ()};
+    } else if test == "1215" {
+        let thread = thread::spawn(|| start_server_icmpv6(rx));
+        sleep(Duration::from_millis(100));
+        println!("Sending packets");
+        let mut buffer:Vec<u8> = vec![0;54];
+        let mut packet= MutableEthernetPacket::new(&mut buffer).unwrap();
+        get_packet(&mut packet,interface.mac_address(), destination_mac, source_ip, destination_ip);
+        let mut payload = MutableIpv6Packet::new(packet.payload_mut()).unwrap();
+        get_11212_packet(&mut payload, 1);
         tx.send_to(packet.packet(), None);
         println!("Packet sent");
         match thread.join() {_=> ()};
