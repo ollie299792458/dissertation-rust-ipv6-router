@@ -130,7 +130,7 @@ fn transform_ipv6_packet(old_packet: Ipv6Packet, new_packet: & mut MutableIpv6Pa
             new_packet.set_source(source);
             new_packet.set_destination(destination);
             new_packet.set_next_header(Icmpv6);
-            new_packet.set_payload_length(payload_length);//todo fix this, can result in miscalculated mtu's
+            new_packet.set_payload_length(payload_length+8);//todo fix this, can result in miscalculated mtu's
 
             return Ok(macs);
         }
@@ -286,7 +286,7 @@ fn shuffle_icmpv6_payload(old_packet: &Ipv6Packet, new_packet: &mut MutableIcmpv
     let packet_size = old_packet.get_payload_length() as u32;
     let mtu = routing.get_mtu(source_mac);
     let buffer = old_packet.packet();
-    if (packet_size+8) < mtu {
+    if (packet_size+8) < mtu { //todo fix this so it deals with min mtu not actual mtu (1280)
         let mut new_buffer = vec![0; buffer.len() + 4];
         let new_buffer_slice = &mut new_buffer[4..];
         new_buffer_slice.clone_from_slice(&buffer);

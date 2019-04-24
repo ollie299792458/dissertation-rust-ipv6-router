@@ -108,7 +108,7 @@ fn main() {
         tx.send_to(packet.packet(), None);
         println!("Packet sent");
         match thread.join() {_=> ()};
-    }else if test == "1216" {
+    } else if test == "1216" {
         let thread = thread::spawn(|| start_server_icmpv6(rx));
         sleep(Duration::from_millis(100));
         println!("Sending packets");
@@ -117,6 +117,18 @@ fn main() {
         get_packet(&mut packet,interface.mac_address(), destination_mac, source_ip, destination_ip);
         let mut payload = MutableIpv6Packet::new(packet.payload_mut()).unwrap();
         get_1216_packet(&mut payload);
+        tx.send_to(packet.packet(), None);
+        println!("Packet sent");
+        match thread.join() {_=> ()};
+    } else if test == "1217" {
+        let thread = thread::spawn(|| start_server_icmpv6(rx));
+        sleep(Duration::from_millis(100));
+        println!("Sending packets");
+        let mut buffer:Vec<u8> = vec![0;54];
+        let mut packet= MutableEthernetPacket::new(&mut buffer).unwrap();
+        get_packet(&mut packet,interface.mac_address(), destination_mac, source_ip, destination_ip);
+        let mut payload = MutableIpv6Packet::new(packet.payload_mut()).unwrap();
+        get_1217_packet(&mut payload);
         tx.send_to(packet.packet(), None);
         println!("Packet sent");
         match thread.join() {_=> ()};
@@ -220,6 +232,10 @@ fn get_1216_packet(packet: &mut MutableIpv6Packet) {
     packet.set_payload_length(payload_length as u16);
 }
 
+fn get_1217_packet(packet: &mut MutableIpv6Packet) {
+    packet.set_next_header(IpNextHeaderProtocol::new(29));
+}
+
 fn get_ipv6_packet(packet: &mut MutableIpv6Packet, source:Ipv6Addr, destination:Ipv6Addr) {
     packet.set_version(6);
     packet.set_traffic_class(0);
@@ -248,12 +264,18 @@ fn start_server_icmpv6(mut rx: Box<DataLinkReceiver>) {
             Ok(packet) => {
                 let eth_packet = EthernetPacket::new(packet).unwrap();
                 let ipv6_packet = Ipv6Packet::new(eth_packet.payload()).unwrap();
-                let icmpv6_packet = Icmpv6Packet::new(ipv6_packet.payload()).unwrap();
+                let icmpv6_packet = match Icmpv6Packet::new(ipv6_packet.payload()) {
+                    Some(p) => p,
+                    None => {
+                        println!("No payload");
+                        continue;
+                    },
+                };
                 println!("From:{:?}, Details:{:?}, Payload:{:?}",ipv6_packet.get_source(), icmpv6_packet, icmpv6_packet.payload());
                 //println!("{:X?}",packet);
             }
             Err(e)=> {
-                println!("Server: {:?}",e);
+                println!("Client server: {:?}",e);
                 continue;
             }
         }
