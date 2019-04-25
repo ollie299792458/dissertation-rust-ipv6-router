@@ -6,8 +6,9 @@
 \contentsline {chapter}{\numberline {1}Introduction}{9}{chapter.1}
 \contentsline {chapter}{\numberline {2}Preparation}{11}{chapter.2}
 \contentsline {section}{\numberline {2.1}Research}{11}{section.2.1}
-\contentsline {section}{\numberline {2.2}Design}{12}{section.2.2}
-\contentsline {section}{\numberline {2.3}Test Plan}{12}{section.2.3}
+\contentsline {section}{\numberline {2.2}Analysis}{12}{section.2.2}
+\contentsline {section}{\numberline {2.3}Design}{12}{section.2.3}
+\contentsline {section}{\numberline {2.4}Test Plan}{12}{section.2.4}
 \contentsline {chapter}{\numberline {3}Implementation}{13}{chapter.3}
 \contentsline {chapter}{\numberline {4}Evaluation}{15}{chapter.4}
 \contentsline {chapter}{\numberline {5}Conclusion}{17}{chapter.5}

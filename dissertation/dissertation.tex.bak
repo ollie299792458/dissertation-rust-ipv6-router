@@ -27,6 +27,8 @@
 
 \rightline{\LARGE \textbf{Oliver Black}}
 
+\addcontentsline{toc}{chapter}{Cover Sheet}
+
 \vspace*{60mm}
 \begin{center}
 \Huge
@@ -37,6 +39,7 @@ Selwyn College \\[5mm]
 \end{center}
 
 \newpage
+\addcontentsline{toc}{chapter}{Declaration of Originality}
 \section*{Declaration of Originality}
 
 I, Oliver Black of Selwyn College, being a candidate for Part II of 
@@ -58,6 +61,7 @@ extent for a comparable purpose.
 \pagestyle{plain}
 
 \chapter*{Proforma}
+\addcontentsline{toc}{chapter}{Proforma}
 
 {\large
 \begin{tabular}{ll}
@@ -90,8 +94,9 @@ Despite having initial difficulties setting up my test environment using Mininet
 None. TODO fill in
 
 \tableofcontents
-
+\addcontentsline{toc}{chapter}{Table of Contents}
 \listoffigures
+\addcontentsline{toc}{chapter}{List of Figures}
 
 \newpage
 \section*{Acknowledgements}
@@ -140,11 +145,19 @@ Most of my research time however was spent reading RFCs related to IPv6.  The ma
 
 \bigskip
 
+Another important RFC was the Internet Control Messaging Protocol RFC\cite{icmp_rfc}.  This protocol accompanies IPv6 proper, and must be implemented by all IPv6 routers.  It allows, among other things, errors about dropped packets to be sent back to the source, and \textit{Echo Request/Reply} (ping) messages to be sent.
+
 \bigskip
 
-The IPv6 Addressing RFC\cite{ipv6_rfc_adr} contains all you could want to know about the various kinds of IPv6 addresses. However, it is mainly just a list of address ranges and whether they have any special behaviour, it doesn't affect the design of a router much.  I also consulted a few more RFCs related to features that didn't \textit{need} to be implemented by an IPv6 router
+The IPv6 Addressing RFC\cite{ipv6_rfc_adr} contains all you could want to know about the various kinds of IPv6 addresses. However, it is mainly just a list of address ranges and whether they have any special behaviour, it doesn't affect the design of a router much.  I also consulted a few more RFCs related to features that didn't \textit{need} to be implemented by an IPv6 router, more details on those can be found under \hyperref[appendix::requirements]{Appendix A}.
 
 \section{Design}
+
+Having completed my research the next step was design, this was roughly split into two parts.  First I would need to list the specific requirements that my router would need to fulfil.  Secondly I would need to come up with a framework that would allow me to fulfil those requirements.
+
+\bigskip
+
+The results of my \tex
 
 \section{Test Plan}
 
@@ -157,6 +170,7 @@ Simple Router: https://github.com/mininet/mininet/wiki/Simple-Router
 Design
 RFCs
 Router knowledge - diagram
+Layer separation - diagram
 
 Test bench
 Test criteria (appendix) - spreadsheet
@@ -195,12 +209,12 @@ More detail in implementation on mininet
 \appendix
 
 \chapter{Requirements}
-
-
+\label{appendix::requirements}
 \includepdf[page=-]{requirements}
 
 
-\chapter{Project Proposal}
+\chapter*{Project Proposal}
+\addcontentsline{toc}{chapter}{Project Proposal}
 
 \includepdf[page=-]{proposal}
 

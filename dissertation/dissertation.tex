@@ -145,13 +145,27 @@ Most of my research time however was spent reading RFCs related to IPv6.  The ma
 
 \bigskip
 
-TODO ICMPv6 RFC
+Another important RFC was the Internet Control Messaging Protocol RFC\cite{icmp_rfc}.  This protocol accompanies IPv6 proper, and must be implemented by all IPv6 routers.  It allows, among other things, errors about dropped packets to be sent back to the source, and \textit{Echo Request/Reply} (ping) messages to be sent.
 
 \bigskip
 
 The IPv6 Addressing RFC\cite{ipv6_rfc_adr} contains all you could want to know about the various kinds of IPv6 addresses. However, it is mainly just a list of address ranges and whether they have any special behaviour, it doesn't affect the design of a router much.  I also consulted a few more RFCs related to features that didn't \textit{need} to be implemented by an IPv6 router, more details on those can be found under \hyperref[appendix::requirements]{Appendix A}.
 
+\section{Analysis}
+
+Having completed research...
+
+\bigskip
+
+The full results of my analysis can be seen under  \hyperref[appendix::requirements]{Appendix A}.
+
 \section{Design}
+
+Having completed analysis....
+
+\bigskip
+
+
 
 \section{Test Plan}
 
@@ -164,6 +178,7 @@ Simple Router: https://github.com/mininet/mininet/wiki/Simple-Router
 Design
 RFCs
 Router knowledge - diagram
+Layer separation - diagram
 
 Test bench
 Test criteria (appendix) - spreadsheet
