@@ -189,49 +189,63 @@ There are three main areas of requirements:
 \begin{itemize}
 \item Addressing
 \item Packet inspection \& forwarding
-\item Error reporting \& ICMPv6
+\item Error reporting \& ICMPv6\cite{icmpv6_rfc}
 \end{itemize}
 
 \bigskip
 
 The requirements for addressing can be divided into two parts, the address discovery mechanism (static, SLAAC\cite{slaac_rfc} or DHCPv6\cite{dhcpv6_rfc}) and different address types (Unicast, Anycast, Multicast).  
 
-\smallskip
-
 Although DHCPv6 and SLAAC are both practical and interesting, they aren't \textit{needed} for an RFC router - static addressing is sufficient - so they were put as extension requirements.  Static addressing means the relationship between IPv6 addresses and link layer interfaces is defined when the router starts based on a fixed configuration. In order to get the router forwarding packets as quickly as possible an additional requirement of \textit{flooding} addressing was added.  This is not defined in the RFC for IPv6, as it means the router functions instead as a link layer switch, sending all incoming packets out on all interfaces. Static addressing was \textit{needed} by the RFCs and I decided flooding alone wouldn't really constitute basic testable functionality (of a router). So static addressing is a basic core requirement, with DHCPv6 and SLAAC being extension requirements.
 
-\smallskip
-
-Address types in IPv6 are well defined by the addressing RFC\cite{ipv6_rfc_adr}, hand a router \textit{needs} to deal with all of them.  However, in order to test basic functionality only Unicast really needs to be implemented, as Anycast and Multicast are just mappings from a 'Unicast' address to many Unicast addresses. So Unicast is a basic core requirement, with Anycast and Multicast being advanced core requirements.
+Address types in IPv6 are well defined by the addressing RFC\cite{ipv6_rfc_adr}, hand a router \textit{needs} to deal with all of them.  However, in order to test basic functionality only Unicast really needs to be implemented, as Anycast and Multicast are just mappings from a 'Unicast' address to many Unicast addresses. So Unicast is a basic core requirement, with Anycast and Multicast being advanced core requirements. IPv6 also includes scope for local only addresses, as well as a variety of other specific types, these could also have been extension requirements.
 
 \bigskip
 
 Every packet the router receives needs to be sent to the right destination, and any packet for which the destination is unknown should be sent to the default route. This falls under static addressing as my requirements don't differentiate between the control and data plane - see \hyperref[sec::design]{Design}.  However the payload length must be checked to see if it matches the actual length of the payload - and the packet discarded if not.  Additionally the hop limit must be checked, if it is 1 or 0 the packet should be discarded, otherwise it should be decreased by 1.  Both of these are basic core requirements, they are \textit{needed} and without them it is hard to test basic functionality. Without hop-limit decrements the router leaves packets unaffected, so it is hard to tell if they went through the router at all.
 
-\bigskip
-
-ICMPv6
-hop limit - destination
+IPv6 also has many extension headers, but they \textit{need} to be ignored by intermediate nodes (for example, fragmentation can only be done by the source and destination nodes), except for the \textit{hop-by-hop options header} which can be ignored by intermediate nodes. Apart from ICMPv6 packets my router does not deal with packets that are encapsulated by IPv6 packets (including transport layer protocols).  This means that it does not need to process any headers at all, except for ICMPv6 packets.
 
 \bigskip
 
-For a formal list of the requirements I came up with, along with identifiers and associated tests see \hyperref[appendix::requirements]{Appendix A}.
+ICMPv6 works alongside IPv6 to send informational and error messages between nodes.  These messages include destination, packet size, hop limit, \& header error messages, and echo request \& reply informational messages. One slightly odd requirement relates back to hop-limit in the IPv6 header, if an arriving packet has a hop limit of 1, it should be discarded, unless the destination node is the router.  This only occurs for ICMPv6 messages. 
+
+ICMPv6 is /textit{needed} for any IPv6 router.  However, in order to test the basic functionality of my router it was not required. This is because error reporting functions can be, in part, replaced by log output from the router itself. As such, ICMPv6 is an advanced core requirement.
+
+\bigskip
+
+For a formal list of the requirements I came up with (along with identifiers and associated tests) see \hyperref[appendix::requirements]{Appendix A}.
 
 \section{Design}
 \label{sec::design}
 
-Having completed analysis....
+Having completed my analysis and produced a structured list of requirements the next step was to come up with a design of router that would enable me to implement these requirements.  There were two main ideas in the design of the router itself (the design of the test bench is discussed in the next section). 
+
+\bigskip
+
+The first was the separation of the control and forwarding plane, which by itself is nothing special, but the design in software was slight more complex.  As always, the control plane deals with the addressing (along with other aspects and the forwarding plane with link layer interfaces and individual packets.  The two communicate through forwarding tables (in the case of non static addressing communication in the other direction is also required). The forwarding plane in my case is made up of a pair of threads for each interface, one receiving and one transmitting. All of the receiving threads have read access to two objects, one is the routing table produced by the control plane, the other is a map of hardware addresses to channels.  The channel each hardware address is linked to leads to the transmitting thread for the interface of that hardware address. See \hyperref[chap::implementation]{Implementation} for more details.
+
+\bigskip
+
+The second was designing the layer separation inherent in the TCP/IP stack into the router.  This was achieved by having a different function handle each layer, and only passing necessary information between the functions.  There are three layers, Ethernet, IPv6, and ICMPv6 in the router.
+
+\bigskip
+
+Both of these design choices made the implementation much easier, separating out sections
 
 \bigskip
 
 Static addressing
 
-Test bench packet choices
 
 
 \section{Test Plan}
 
-This chapter is empty!
+Mininet - issues in implementation
+
+Test bench packet choices
+
+Basic requirements checked with log output
 
 Examples
 Mininet: Ipv4 - see below
@@ -249,12 +263,21 @@ More detail in implementation on mininet
 
 
 \chapter{Implementation}
+\label{chap::implementation}
+
+\section{Router}
+
+explain design into practice
+
+\section{Test Bench}
 
 Mention flooding success
 
 \chapter{Evaluation}
 
-
+Extension headers and ICMPv6
+ICMPv6 erroneous header, fragment reconstruction, destination unreachable
+Local and subnet addresses - maybe explain more earlier
 
 \chapter{Conclusion}
 
