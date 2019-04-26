@@ -130,7 +130,7 @@ Mininet\cite{mininet} is an open source virtual network simulator that was devel
 
 \bigskip
 
-Routers are the backbone of the internet, at the most simple level many of them have a \textit{control plane} that deals with addressing, and a \textit{forwarding plane} that deals with sending packets. There are many open source routers out there, but almost all of them have lots of IPv4 code. This makes it difficult to isolate and understand how the IPv6 part actually works.  Starting from scratch allows you to avoid having to deal with IPv4 at all.  Using the IPv6 standard as a framework, combined with some knowledge about the internals of routers, it is possible to develop and IPv6 router that is stable, small, simple, \& fast.
+Routers are the backbone of the internet, at the most simple level many of them have a \textit{control plane} that deals with addressing, and a \textit{forwarding plane} that deals with actually sending packets. There are many open source routers out there, but almost all of them have lots of IPv4 code. This makes it difficult to isolate and understand how the IPv6 part actually works.  Starting from scratch allows you to avoid having to deal with IPv4 at all.  Using the IPv6 standard as a framework, combined with some knowledge about the internals of routers, it is possible to develop and IPv6 router that is stable, small, simple, \& fast.
 
 \chapter{Preparation}
 
@@ -141,23 +141,97 @@ An analogous project for IPv4 called Simple Router already exists\cite{simple_ro
 
 \bigskip
 
-Most of my research time however was spent reading RFCs related to IPv6.  The main RFC\cite{ipv6_rfc} specifies everything you need to know about IPv6 packets. This describes the contents of the main IPv6 header, including how the fields (e.g. \textit{Hop Limit}) are modified for packets in transit. Additionally this includes the extension headers that need to be implemented by a router, when the packet in question is not addressed to the router this turns out to be none. 
+Most of my research time however was spent reading RFCs related to IPv6.  The main RFC\cite{ipv6_rfc} specifies everything you need to know about IPv6 packets. This describes the contents of the main IPv6 header, \hyperref[fig::ipv6_header]{Figure }\ref{fig::ipv6_header}, including how the fields (e.g. \textit{Hop Limit}) are modified for packets in transit. Additionally this includes the extension headers that need to be implemented by a router, when the packet in question is not addressed to the router this turns out to be none. 
+
+\begin{figure}
+\begin{verbatim}
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|Version| Traffic Class |           Flow Label                  |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|         Payload Length        |  Next Header  |   Hop Limit   |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                                                               |
++                                                               +
+|                                                               |
++                         Source Address                        +
+|                                                               |
++                                                               +
+|                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                                                               |
++                                                               +
+|                                                               |
++                      Destination Address                      +
+|                                                               |
++                                                               +
+|                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+\end{verbatim}
+\caption{IPv6 Header Format\cite{ipv6_rfc}}
+\label{fig::ipv6_header}
+\end{figure}
 
 \bigskip
 
-Another important RFC was the Internet Control Messaging Protocol RFC\cite{icmp_rfc}.  This protocol accompanies IPv6 proper, and must be implemented by all IPv6 routers.  It allows, among other things, errors about dropped packets to be sent back to the source, and \textit{Echo Request/Reply} (ping) messages to be sent.
+Another important RFC was the Internet Control Messaging Protocol (ICMP) RFC\cite{icmpv6_rfc}.  This protocol accompanies IPv6 proper, and must be implemented by all IPv6 routers.  It allows, among other things, errors about dropped packets to be sent back to the source, and \textit{Echo Request/Reply} (ping) messages to be sent.  Alongside this it was important to gain an understanding of how IPv6 related to the link layer below and the transport layer above.
 
 \bigskip
 
 The IPv6 Addressing RFC\cite{ipv6_rfc_adr} contains all you could want to know about the various kinds of IPv6 addresses. However, it is mainly just a list of address ranges and whether they have any special behaviour, it doesn't affect the design of a router much.  I also consulted a few more RFCs related to features that didn't \textit{need} to be implemented by an IPv6 router, more details on those can be found under \hyperref[appendix::requirements]{Appendix A}.
 
-\section{Design}
+\section{Analysis}
 
-Having completed my research the next step was design, this was roughly split into two parts.  First I would need to list the specific requirements that my router would need to fulfil.  Secondly I would need to come up with a framework that would allow me to fulfil those requirements.
+After finishing my research I needed to do some \textit{requirements analysis} to workout what exactly my router needed to implement, and in what order I should go about implementing them.  I divided up the requirements as recommended into \textit{core} and \textit{extension}, where core contained everything an IPv6 router \textit{needed} to do (according to the RFCs), and extension things I thought I would like it to do as well.  Core was further divided up into \textit{basic} and \textit{advanced}, with basic being everything the router required to provide some form of basic testable functionality, and extension being everything else that was \textit{needed}.
 
 \bigskip
 
-The results of my \tex
+There are three main areas of requirements:
+\begin{itemize}
+\item Addressing
+\item Packet inspection \& forwarding
+\item Error reporting \& ICMPv6
+\end{itemize}
+
+\bigskip
+
+The requirements for addressing can be divided into two parts, the address discovery mechanism (static, SLAAC\cite{slaac_rfc} or DHCPv6\cite{dhcpv6_rfc}) and different address types (Unicast, Anycast, Multicast): 
+
+\smallskip
+
+Although DHCPv6 and SLAAC are both practical and interesting, they aren't \textit{needed} for an RFC router - static addressing is sufficient - so they were put as extension requirements.  Static addressing means the relationship between IPv6 addresses and link layer interfaces is defined when the router starts based on a fixed configuration. In order to get the router forwarding packets as quickly as possible an additional requirement of \textit{flooding} addressing was added.  This is not defined in the RFC for IPv6, as it means the router functions instead as a link layer switch, sending all incoming packets out on all interfaces. Static addressing was \textit{needed} by the RFCs and I decided flooding alone wouldn't really constitute basic testable functionality (of a router). So static addressing is a basic core requirement, with DHCPv6 and SLAAC being extension requirements.
+
+\smallskip
+
+Address types in IPv6 are well defined by the addressing RFC\cite{ipv6_rfc_adr}, hand a router \textit{needs} to deal with all of them.  However, in order to test basic functionality only Unicast really needs to be implemented, as Anycast and Multicast are just mappings from a 'Unicast' address to many Unicast addresses. So Unicast is a basic core requirement, with Anycast and Multicast being advanced core requirements.
+
+\bigskip
+
+Every packet the router receives needs to be sent to the right destination, and any packet for which the destination is unknown should be sent to the default route. This falls under static addressing as my requirements don't differentiate between the control and data plane - see \hyperref[sec::design]{Design}.  However the payload length must be checked to see if it matches the actual length of the payload - and the packet discarded if not.  Additionally the hop limit must be checked, if it is 1 or 0 the packet should be discarded, otherwise it should be decreased by 1.  Both of these are basic core requirements, they are \textit{needed} and without them it is hard to test basic functionality. Without hop-limit decrements the router leaves packets unaffected, so it is hard to tell if they went through the router at all. IPv6 includes a large number of extension headers, all but one are \textit{needed} to be ignored by intermediate nodes, and the \textit{hop-by-hop options header} can be ignored by intermediate nodes, so all of these were extension requirements.
+
+\bigskip
+
+ICMPv6 is used to report errors and pass on information alongside IPv6. 
+\smallskip
+A short comment on the router as the destination of packets. With the exception of ICMPv6, my router did not process any higher layer protocols, and as such was only a valid destination for ICMPv6 packets. This allowed my requirements to mostly ignore extension headers. 
+
+ICMPv6
+hop limit - destination
+
+\bigskip
+
+For a formal list of the requirements I came up with, along with identifiers and associated tests see \hyperref[appendix::requirements]{Appendix A}.
+
+\section{Design}
+\label{sec::design}
+
+Having completed analysis....
+
+\bigskip
+
+Static addressing
+
+Test bench packet choices
+
 
 \section{Test Plan}
 
@@ -171,6 +245,7 @@ Design
 RFCs
 Router knowledge - diagram
 Layer separation - diagram
+DHCPv6, SLAAC, and Static diagram?
 
 Test bench
 Test criteria (appendix) - spreadsheet
@@ -179,7 +254,7 @@ More detail in implementation on mininet
 
 \chapter{Implementation}
 
-
+Mention flooding success
 
 \chapter{Evaluation}
 
@@ -195,11 +270,21 @@ More detail in implementation on mininet
 \addcontentsline{toc}{chapter}{Bibliography}
 
 \bibitem{rust} Rust, a modern low level programming language, \url{https://www.rust-lang.org/}
+
 \bibitem{mininet} Mininet, a network virtualisation library in Python, \url{http://mininet.org/}
-\bibitem{ipv6_rfc} Internet Protocol, Version 6 (IPv6) Specification, RFC 8200, July 2017
-\bibitem{ipv6_rfc_adr} IP Version 6 Addressing Architecture, RFC 4291, February 2006
-\bibitem{ipv4_rfc} INTERNET PROTOCOL DARPA INTERNET PROGRAM PROTOCOL SPECIFICATION, RFC 791, September 1981
-\bibitem{icmpv6_rfc} Internet Control Message Protocol (ICMPv6) for the Internet Protocol Version 6 (IPv6) Specification, RFC 4443, March 2006
+
+\bibitem{ipv6_rfc} Internet Protocol, Version 6 (IPv6) Specification, \hyperlink[https://tools.ietf.org/html/rfc8200]{RFC 8200}, July 2017
+
+\bibitem{ipv6_rfc_adr} IP Version 6 Addressing Architecture, \hyperlink[https://tools.ietf.org/html/rfc4291]{RFC 4291}, February 2006
+
+\bibitem{ipv4_rfc} INTERNET PROTOCOL DARPA INTERNET PROGRAM PROTOCOL SPECIFICATION, \hyperlink[https://tools.ietf.org/html/rfc791]{RFC 791}, September 1981
+
+\bibitem{icmpv6_rfc} Internet Control Message Protocol (ICMPv6) for the Internet Protocol Version 6 (IPv6) Specification, \hyperlink[https://tools.ietf.org/html/rfc4443]{RFC 4443}, March 2006
+
+\bibitem{slaac_rfc} IPv6 Stateless Address Autoconfiguration, \hyperlink[https://tools.ietf.org/html/rfc4862]{RFC 4862}, September 2007
+
+\bibitem{dhcpv6_rfc} Dynamic Host Configuration Protocol for IPv6 (DHCPv6), \hyperlink[https://tools.ietf.org/html/rfc3315]{RFC 3315}, July 2003
+
 \bibitem{simple_router} Simple Router, implementing an IPv4 router in C on Mininet, \url{https://github.com/mininet/mininet/wiki/Simple-Router}
 
 \end{thebibliography}
