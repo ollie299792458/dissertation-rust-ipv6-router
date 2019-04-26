@@ -179,6 +179,10 @@ Another important RFC was the Internet Control Messaging Protocol RFC\cite{icmpv
 
 The IPv6 Addressing RFC\cite{ipv6_rfc_adr} contains all you could want to know about the various kinds of IPv6 addresses. However, it is mainly just a list of address ranges and whether they have any special behaviour, it doesn't affect the design of a router much.  I also consulted a few more RFCs related to features that didn't \textit{need} to be implemented by an IPv6 router, more details on those can be found under \hyperref[appendix::requirements]{Appendix A}.
 
+\bigskip
+
+Finally I spent some time researching rust, as it was a new language to me, and I didn't want to make mistakes early on in my implementation that would make things much harder later on.
+
 \section{Analysis}
 
 After finishing my research I needed to do some \textit{requirements analysis} to workout what exactly my router needed to implement, and in what order I should go about implementing them.  I divided up the requirements as recommended into \textit{core} and \textit{extension}, where core contained everything an IPv6 router \textit{needed} to do (according to the RFCs), and extension things I thought I would like it to do as well.  Core was further divided up into \textit{basic} and \textit{advanced}, with basic being everything the router required to provide some form of basic testable functionality, and extension being everything else that was \textit{needed}.
@@ -227,11 +231,11 @@ The first was the separation of the control and forwarding plane, which by itsel
 
 \bigskip
 
-The second was designing the layer separation inherent in the TCP/IP stack into the router.  This was achieved by having a different function handle each layer, and only passing necessary information between the functions.  There are three layers, Ethernet, IPv6, and ICMPv6 in the router.
+The second was designing the layer separation inherent in the TCP/IP stack into the router.  This was achieved by having a different function handle each layer, and only passing necessary information between the functions.  There are three layers, Ethernet, IPv6, and ICMPv6 in the router, so there are three functions, with only the packets themselves and the relevant addresses being passed between the functions.
 
 \bigskip
 
-Both of these design choices made the implementation much easier, separating out sections
+Both of these design choices made the implementation much easier, separating out functionally separate sections of code, reducing the risk of introducing bugs, and making
 
 \bigskip
 
