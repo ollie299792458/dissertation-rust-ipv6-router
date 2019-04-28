@@ -6,6 +6,8 @@
 \usepackage{verbatim}
 \usepackage{pdfpages} % allows inclusion of non tex project proposal
 \usepackage{docmute}   % only needed to allow inclusion of proposal.tex
+\usepackage{tikz}
+\usetikzlibrary{shapes,arrows,positioning,chains}
 
 \raggedbottom                           % try to avoid widows and orphans
 \sloppy
@@ -181,7 +183,7 @@ The IPv6 Addressing RFC\cite{ipv6_rfc_adr} contains all you could want to know a
 
 \bigskip
 
-Finally I spent some time researching rust, as it was a new language to me, and I didn't want to make mistakes early on in my implementation that would make things much harder later on.
+Finally I spent some time researching rust, as it was a new language to me, and I didn't want to make mistakes early on in my implementation that would make things much harder later on.  I discovered a library called pnet\cite{pnet_rust} which implemented low level networking functions and packet abstractions, exactly what I would need.
 
 \section{Analysis}
 
@@ -231,19 +233,64 @@ The first was the separation of the control and forwarding plane, which by itsel
 
 \bigskip
 
-The second was designing the layer separation inherent in the TCP/IP stack into the router.  This was achieved by having a different function handle each layer, and only passing necessary information between the functions.  There are three layers, Ethernet, IPv6, and ICMPv6 in the router, so there are three functions, with only the packets themselves and the relevant addresses being passed between the functions.
+The second was designing the layer separation inherent in the TCP/IP stack into the router.  This was achieved by having a different function handle each layer, and only passing necessary information between the functions.  There are three layers, Ethernet, IPv6, and ICMPv6 in the router, so there are three functions, with only the packets themselves and the relevant addresses being passed between the functions. The Ethernet function sends the IPv6 packet to the IPv6 function, which returns the new IPv6 packet, and the hardware address to send it to.  The IPv6 function sends the ICMPv6 packet along with the source and destination address to the ICMPv6 function, which returns the new ICMPv6 packet along with the new source and destination addresses (See \hyperref[fig::layer_separation]{Figure }\ref{fig::layer_separation}).
+
+\begin{figure}
+\centering
+\begin{tikzpicture}
+
+\tikzstyle{block} = [rectangle, draw, 
+    text width=5em, text centered, rounded corners, minimum height=2cm,node distance = 2.5cm]
+\tikzstyle{invisible} = [rectangle,minimum height=1cm]
+\tikzstyle{line} = [draw, -latex']
+
+\node [invisible] (anchor) {};
+\node [block, left=of anchor] (receiver) {Receiver};
+\node [block, right=of anchor] (sender) {Sender};
+\node [block, below=of anchor] (ethernet) {Etherent};
+\node [block, below=of ethernet] (ipv6) {IPv6};
+\node [block, below=of ipv6] (icmpv6) {ICMPv6};
+
+\path [line] (receiver) |- 
+node [near start, transform canvas={xshift=-21mm}] {Old Ethernet Frame} 
+(ethernet);
+\path [line] (ethernet) -| 
+node [near end, transform canvas={xshift=+21mm}] {New Ethernet Frame} 
+(sender);
+\path [line] (ethernet) edge [transform canvas={xshift=-3mm}] 
+node [transform canvas={xshift=-17mm}] {Old IPv6 Packet}
+(ipv6);
+\path [line] (ipv6) edge [transform canvas={xshift=+3mm}] 
+node [transform canvas={xshift=+42mm}, text width=8cm, align=left] {New IPv6 Packet, Source \& Destination MACs}
+(ethernet);
+\path [line] (ipv6) edge [transform canvas={xshift=-3mm}] 
+node [transform canvas={xshift=-42mm}, text width=8cm, align=right] {Old ICMPv6 Packet, Source \& Destination IPv6 Addresses}
+(icmpv6);
+\path [line] (icmpv6) edge [transform canvas={xshift=+3mm}] 
+node [transform canvas={xshift=+42mm}, text width=8cm, align=left] {New ICMPv6 Packet, Source \& Destination MACs}
+(ipv6);
+
+    
+\end{tikzpicture}
+\caption{Layer Separation}
+\label{fig::layer_separation}
+\end{figure}
 
 \bigskip
 
-Both of these design choices made the implementation much easier, separating out functionally separate sections of code, reducing the risk of introducing bugs, and making
-
-\bigskip
-
-Static addressing
-
-
+Both of these design choices made the implementation much easier, separating the code into functionally separate sections, reducing the risk of introducing bugs, and most importantly providing a structured framework within which to code.
 
 \section{Test Plan}
+
+With requirements and a design of the router completed, I needed to come up with a plan of how I was going to verify that my router was functioning as expected.  This was divided into two parts, the design of the test bench, and secondly the list of tests to be run on it.
+
+\bigskip
+
+Test bench
+
+\bigskip
+
+Test critera
 
 Mininet - issues in implementation
 
@@ -273,9 +320,16 @@ More detail in implementation on mininet
 
 explain design into practice
 
+static addressing
+
 \section{Test Bench}
 
-Mention flooding success
+Mininet
+
+Mention flooding success then test plan stuff
+
+
+Maybe some stuff from evaluation here
 
 \chapter{Evaluation}
 
@@ -295,6 +349,8 @@ Local and subnet addresses - maybe explain more earlier
 \bibitem{rust} Rust, a modern low level programming language, \url{https://www.rust-lang.org/}
 
 \bibitem{mininet} Mininet, a network virtualisation library in Python, \url{http://mininet.org/}
+
+\bibitem{pnet_rust} pnet, a low-level networking API for rust, \url{https://docs.rs/pnet}
 
 \bibitem{ipv6_rfc} Internet Protocol, Version 6 (IPv6) Specification, \hyperlink[https://tools.ietf.org/html/rfc8200]{RFC 8200}, July 2017
 
