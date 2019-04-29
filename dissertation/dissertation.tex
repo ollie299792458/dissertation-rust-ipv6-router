@@ -235,11 +235,38 @@ The first was the separation of the control and forwarding plane, which by itsel
 \centering
 \begin{tikzpicture}
 \tikzstyle{block} = [rectangle, draw, 
-    text width=5em, text centered, minimum height=2cm,node distance = 2.5cm]
+    text width=5em, text centered, minimum height=2cm,node distance = 2cm]
+\tikzstyle{middle} = [text width=5em, text centered, minimum height=1cm,node distance = 2cm]
+\tikzstyle{little} = [rectangle, draw, middle]
+\tikzstyle{line} = [draw, -latex']
 
-\node [block] (control) {Control Plane}
-\coordinate [below=of control] (middle)
-\node [block]
+\node [block] (control) {Control Plane};
+\node [below=of control, yshift=-10mm] (center) {};
+\node [little, left=of center] (recv1) {Rx(1)};
+\node [little, below=of recv1] (recv2) {Rx(n)};
+\node [little, right=of center] (trans1) {Tx(1)};
+\node [little, below=of trans1] (trans2) {Tx(n)};
+
+\path (recv1) -- node [middle] (midl){\ldots} (recv2);
+
+\path (trans1) -- node [middle] (midr){\ldots} (trans2);
+
+\path [line] (control) -|
+node [near end, transform canvas={xshift=-16mm}] {Routing Table}
+(recv1);
+
+\path  [line] (recv1) -- node [transform canvas={yshift=+3mm}] {Map of channels} (trans1);
+\path  [line] (recv1) -- (trans2);
+\path  [line] (recv1) -- (midr);
+
+\path  [line] (midl) -- (trans1);
+\path  [line] (midl) -- (trans2);
+\path  [line] (midl) -- (midr);
+
+\path  [line] (recv2) -- (trans1);
+\path  [line] (recv2) -- (trans2);
+\path  [line] (recv2) -- (midr);
+
 \end{tikzpicture}
 \caption{Router Design}
 \label{fig::router_design}
@@ -298,31 +325,15 @@ With requirements and a design of the router completed, I needed to come up with
 
 \bigskip
 
-Test bench
+I planned to make up my test bench from Mininet and a couple of helper applications (either written in Python or Rust).  Some helper applications would be capable of sending packets with specific properties, and outputting any packets they received. Other helper applications would do more complicated end to end testing, such as running a web server and requesting web pages.  Unfortunately I found Mininet's IPv6 support was far less complete than I had believed in my \hyperref[project_proposal]{Project Proposal}.  I either had to write my own network emulation environment from scratch, or develop some kind of modification or wrapper for Mininet.  I chose to focus on a wrapper that would intercept the functions I needed to use, and change the necessary things to get Mininet working, details of this wrapper can be found in \hyperref[chap::implementation]{Implementation}.
 
 \bigskip
 
-Test critera
+When formalising the results of my analysis into a list of tests there were two key steps. The first, a simple one, was numbering everything so I wouldn't get lost or forget any requirements.  Secondly I had to think of the test themselves, this normally included a test for the given functionality when it should happen, a test for it not happening when it shouldn't happen, and any edge case tests I could thing of.  For example, hop limit decrement, when a packet passes through the router its hop limit should be decreased by 1 and the packet sent on its way; when the packet has a hop limit of 1 or 0 on arrival it should be dropped and not sent on its way, and if, the packet has a hop limit of 1 and is addressed to the router it should not be dropped, it should instead be handed up a layer. 
 
-Mininet - issues in implementation
+\bigskip
 
-Test bench packet choices
-
-Basic requirements checked with log output
-
-Examples
-Mininet: Ipv4 - see below
-Simple Router: https://github.com/mininet/mininet/wiki/Simple-Router
-
-Design
-RFCs
-Router knowledge - diagram
-DHCPv6, SLAAC, and Static diagram?
-
-Test bench
-Test criteria (appendix) - spreadsheet
-More detail in implementation on mininet
-
+To avoid all the tests being dependent on an almost complete implementation of the router. If we return to the example hop limit given above the router should send an ICMPv6 \textit{Time Exceeded} message when a packet is dropped.  However, this would mean any test for hop limit depends on a correct implementation of ICMPv6, as well as the correct implementation of Hop Limit.  As a result every test can only rely on functionality already implemented.  My numbering system happened to match my planned order of implementation, so just reading off all the previous tests lets you know which features that test potentially relies on.  Back to the hop limit example, this means that success of the hop limit test was judged by the packet not continuing and log messages being outputted by the router process. When it came to test Time Exceeded though it could rely on the already implemented hop limit, so the planned test involved sending a packet with hop limit 0 and testing for a Time Exceeded response.
 
 \chapter{Implementation}
 \label{chap::implementation}
@@ -337,7 +348,7 @@ static addressing
 
 Mininet
 
-Mention flooding success then test plan stuff
+Mention flooding success then test plan stuff - maybe in router?
 
 
 Maybe some stuff from evaluation here
@@ -347,6 +358,8 @@ Maybe some stuff from evaluation here
 Extension headers and ICMPv6
 ICMPv6 erroneous header, fragment reconstruction, destination unreachable
 Local and subnet addresses - maybe explain more earlier
+lack of end to end testing
+code coverage
 
 \chapter{Conclusion}
 
@@ -389,6 +402,7 @@ Local and subnet addresses - maybe explain more earlier
 
 
 \chapter*{Project Proposal}
+\label{project_proposal}
 \addcontentsline{toc}{chapter}{Project Proposal}
 
 \includepdf[page=-]{proposal}
