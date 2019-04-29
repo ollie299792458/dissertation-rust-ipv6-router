@@ -229,7 +229,21 @@ Having completed my analysis and produced a structured list of requirements the 
 
 \bigskip
 
-The first was the separation of the control and forwarding plane, which by itself is nothing special, but the design in software was slight more complex.  As always, the control plane deals with the addressing (along with other aspects and the forwarding plane with link layer interfaces and individual packets.  The two communicate through forwarding tables (in the case of non static addressing communication in the other direction is also required). The forwarding plane in my case is made up of a pair of threads for each interface, one receiving and one transmitting. All of the receiving threads have read access to two objects, one is the routing table produced by the control plane, the other is a map of hardware addresses to channels.  The channel each hardware address is linked to leads to the transmitting thread for the interface of that hardware address. See \hyperref[chap::implementation]{Implementation} for more details.
+The first was the separation of the control and forwarding plane, which by itself is nothing special, but the design in software was slight more complex.  As always, the control plane deals with the addressing (along with other aspects and the forwarding plane with link layer interfaces and individual packets.  The two communicate through forwarding tables (in the case of non static addressing communication in the other direction is also required). The forwarding plane in my case is made up of a pair of threads for each interface, one receiving and one transmitting. All of the receiving threads have read access to two objects, one is the routing table produced by the control plane, the other is a map of hardware addresses to channels.  The channel each hardware address is linked to leads to the transmitting thread for the interface of that hardware address (See \hyperref[fig::router_design]{Figure }\ref{fig::router_design}). Read \hyperref[chap::implementation]{Implementation} for specifics.
+
+\begin{figure}
+\centering
+\begin{tikzpicture}
+\tikzstyle{block} = [rectangle, draw, 
+    text width=5em, text centered, minimum height=2cm,node distance = 2.5cm]
+
+\node [block] (control) {Control Plane}
+\coordinate [below=of control] (middle)
+\node [block]
+\end{tikzpicture}
+\caption{Router Design}
+\label{fig::router_design}
+\end{figure}
 
 \bigskip
 
@@ -269,8 +283,6 @@ node [transform canvas={xshift=-42mm}, text width=8cm, align=right] {Old ICMPv6 
 \path [line] (icmpv6) edge [transform canvas={xshift=+3mm}] 
 node [transform canvas={xshift=+42mm}, text width=8cm, align=left] {New ICMPv6 Packet, Source \& Destination MACs}
 (ipv6);
-
-    
 \end{tikzpicture}
 \caption{Layer Separation}
 \label{fig::layer_separation}
@@ -305,7 +317,6 @@ Simple Router: https://github.com/mininet/mininet/wiki/Simple-Router
 Design
 RFCs
 Router knowledge - diagram
-Layer separation - diagram
 DHCPv6, SLAAC, and Static diagram?
 
 Test bench
