@@ -1,0 +1,16 @@
+Software IPv6 Router in Rust, Copyright 2018- 2019 Oliver Black
+
+    Software IPv6 Router in Rust is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Software IPv6 Router in Rust is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Software IPv6 Router in Rust.  If not, see <https://www.gnu.org/licenses/>.
+
+Rust, Rust's standard library, Pnet, and Mininet are all licensed under Apache 2.0, however I do not distribute any of these along with Software IPv6 Router in Rust, so have not included their respective license.

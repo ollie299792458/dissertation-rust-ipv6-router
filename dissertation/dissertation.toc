@@ -10,12 +10,13 @@
 \contentsline {section}{\numberline {2.3}Analysis}{13}{section.2.3}
 \contentsline {section}{\numberline {2.4}Design}{15}{section.2.4}
 \contentsline {section}{\numberline {2.5}Test Plan}{16}{section.2.5}
-\contentsline {chapter}{\numberline {3}Implementation}{19}{chapter.3}
-\contentsline {section}{\numberline {3.1}Router}{19}{section.3.1}
-\contentsline {section}{\numberline {3.2}Test Bench}{19}{section.3.2}
-\contentsline {section}{\numberline {3.3}Software Engineering}{19}{section.3.3}
-\contentsline {chapter}{\numberline {4}Evaluation}{21}{chapter.4}
-\contentsline {chapter}{\numberline {5}Conclusion}{23}{chapter.5}
-\contentsline {chapter}{Bibliography}{25}{chapter*.9}
-\contentsline {chapter}{\numberline {A}Requirements}{27}{appendix.A}
-\contentsline {chapter}{Project Proposal}{33}{appendix*.10}
+\contentsline {section}{\numberline {2.6}Professional Practice}{18}{section.2.6}
+\contentsline {chapter}{\numberline {3}Implementation}{21}{chapter.3}
+\contentsline {section}{\numberline {3.1}Router}{21}{section.3.1}
+\contentsline {section}{\numberline {3.2}Test Bench}{21}{section.3.2}
+\contentsline {section}{\numberline {3.3}Software Engineering}{21}{section.3.3}
+\contentsline {chapter}{\numberline {4}Evaluation}{23}{chapter.4}
+\contentsline {chapter}{\numberline {5}Conclusion}{25}{chapter.5}
+\contentsline {chapter}{Bibliography}{27}{chapter*.9}
+\contentsline {chapter}{\numberline {A}Requirements}{29}{appendix.A}
+\contentsline {chapter}{Project Proposal}{35}{appendix*.10}

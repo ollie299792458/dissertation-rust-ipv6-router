@@ -140,6 +140,7 @@ Routers are the backbone of the internet, at the most simple level many of them 
 Using the IPv6 standard as a framework, combined with some knowledge about the internals of routers, it is possible to develop and IPv6 router that is stable, small, simple, \& fast.  Such a router could continue to be developed until it could be deployed on actual hardware, but the implementation and testing required meant this was not an objective of this project.  Instead, the aim is to develop a router that implements a sub-set of the IPv6 standard, hopefully including everything an IPv6 router is required by the standards to implement.  In the remainder of this dissertation I will discuss the preparation, implementation, and evaluation of this project.
 
 \chapter{Preparation}
+\label{chap::preperation}
 
 Before starting the implementation lots of research and design needed to be done. Lots of research was done into IPv6 RFCs and which aspects were required to be implemented, and which were not. The router software was then designed to provide a framework within which these aspects could be implemented.  Additionally a test plan needed to be made, to enable effective evaluation of the finished product.
 
@@ -383,7 +384,15 @@ When formalising the results of my analysis into a list of tests there were two 
 To avoid all the tests being dependent on an almost complete implementation of the router. If we return to the example hop limit given above the router should send an ICMPv6 \textit{Time Exceeded} message when a packet is dropped.  However, this would mean any test for hop limit depends on a correct implementation of ICMPv6, as well as the correct implementation of Hop Limit.  As a result every test can only rely on functionality already implemented.  My numbering system happened to match my planned order of implementation, so just reading off all the previous tests lets you know which features that test potentially relies on.  Back to the hop limit example, this means that success of the hop limit test was judged by the packet not continuing and log messages being outputted by the router process. When it came to test Time Exceeded though it could rely on the already implemented hop limit, so the planned test involved sending a packet with hop limit 0 and testing for a Time Exceeded response.
 
 \section{Professional Practice}
-This is a brief section on issues related to professional 
+This is a brief section on preparation related to professional skills and practice.  Two large aspects are testing and software engineering, both of which are explained in detail in the rest of \hyperref[chap::preparation]{Preparation} and in \hyperref[chap::implementation]{Implementation}.  
+
+\bigskip
+
+There could be security exploits in my code, and if anybody would like to adapt my code for use in a router I would recommend it is tested afresh. (My router and test bench code is released under the GPL\cite{gpl} on Github\cite{repo}).
+
+\bigskip
+
+I don't believe there are any ethical issues involved in my project, and there is no human testing.
 
 \chapter{Implementation}
 \label{chap::implementation}
@@ -396,6 +405,8 @@ explain design into practice
 
 static addressing
 
+Rust multithreading with IPnet and communication and locking
+
 Code for threads
 Code for separation
 Code for multithreaded routing table
@@ -405,6 +416,8 @@ Code for multithreaded routing table
 Mininet
 
 Mention flooding success then test plan stuff - maybe in router?
+
+Solicited multicast addresses - then hop limit
 
 
 Maybe some stuff from evaluation here
@@ -417,6 +430,12 @@ Agile - explain
 Changed requirements
 No requirements for headers, 
 
+
+Packet in packet out rate limiting
+ICMPv6 destination unreachable cannot occur
+
+
+
 \chapter{Evaluation}
 
 Extension headers and ICMPv6
@@ -426,8 +445,18 @@ lack of end to end testing
 code coverage
 difficulties with mininet
 
+Code size 736 lines
+How much of RFC (ex references) - IPv6:; Addr: ; ICMPv6: 14 of 18  - unsure
+Test coverage - 95%
+
+Routing head not supported - extension headers for ICMPv6 packets
+Hop limit doesn’t work with ping
+
+
 \chapter{Conclusion}
 
+Capitilisation, grammar, spelling, test bench or suite, forwarding or data plane
+https://www.cl.cam.ac.uk/teaching/projects/pinkbook/node18.html
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -435,25 +464,29 @@ difficulties with mininet
 \begin{thebibliography}{1}
 \addcontentsline{toc}{chapter}{Bibliography}
 
+\bibitem{repo} Software IPv6 Router in Rust repository, the code that accompanies this dissertation, \url{https://github.com/ollie299792458/dissertation-rust-ipv6-router}
+
 \bibitem{rust} Rust, a modern low level programming language, \url{https://www.rust-lang.org/}
 
 \bibitem{mininet} Mininet, a network virtualisation library in Python, \url{http://mininet.org/}
 
 \bibitem{pnet_rust} pnet, a low-level networking API for rust, \url{https://docs.rs/pnet}
 
-\bibitem{ipv6_rfc} Internet Protocol, Version 6 (IPv6) Specification, \hyperlink[https://tools.ietf.org/html/rfc8200]{RFC 8200}, July 2017
+\bibitem{ipv6_rfc} Internet Protocol, Version 6 (IPv6) Specification, \href{https://tools.ietf.org/html/rfc8200}{RFC 8200}, July 2017
 
-\bibitem{ipv6_rfc_adr} IP Version 6 Addressing Architecture, \hyperlink[https://tools.ietf.org/html/rfc4291]{RFC 4291}, February 2006
+\bibitem{ipv6_rfc_adr} IP Version 6 Addressing Architecture, \href{https://tools.ietf.org/html/rfc4291}{RFC 4291}, February 2006
 
-\bibitem{ipv4_rfc} INTERNET PROTOCOL DARPA INTERNET PROGRAM PROTOCOL SPECIFICATION, \hyperlink[https://tools.ietf.org/html/rfc791]{RFC 791}, September 1981
+\bibitem{ipv4_rfc} INTERNET PROTOCOL DARPA INTERNET PROGRAM PROTOCOL SPECIFICATION, \href{https://tools.ietf.org/html/rfc791}{RFC 791}, September 1981
 
-\bibitem{icmpv6_rfc} Internet Control Message Protocol (ICMPv6) for the Internet Protocol Version 6 (IPv6) Specification, \hyperlink[https://tools.ietf.org/html/rfc4443]{RFC 4443}, March 2006
+\bibitem{icmpv6_rfc} Internet Control Message Protocol (ICMPv6) for the Internet Protocol Version 6 (IPv6) Specification, \href{https://tools.ietf.org/html/rfc4443}{RFC 4443}, March 2006
 
-\bibitem{slaac_rfc} IPv6 Stateless Address Autoconfiguration, \hyperlink[https://tools.ietf.org/html/rfc4862]{RFC 4862}, September 2007
+\bibitem{slaac_rfc} IPv6 Stateless Address Autoconfiguration, \href{https://tools.ietf.org/html/rfc4862}{RFC 4862}, September 2007
 
-\bibitem{dhcpv6_rfc} Dynamic Host Configuration Protocol for IPv6 (DHCPv6), \hyperlink[https://tools.ietf.org/html/rfc3315]{RFC 3315}, July 2003
+\bibitem{dhcpv6_rfc} Dynamic Host Configuration Protocol for IPv6 (DHCPv6), \href{https://tools.ietf.org/html/rfc3315}{RFC 3315}, July 2003
 
 \bibitem{simple_router} Simple Router, implementing an IPv4 router in C on Mininet, \url{https://github.com/mininet/mininet/wiki/Simple-Router}
+
+\bibitem{gpl} GNU General Purpose License, \url{https://www.gnu.org/licenses/quick-guide-gplv3.html}
 
 \end{thebibliography}
 
