@@ -3,6 +3,24 @@ use std::net::Ipv6Addr;
 use pnet::util::MacAddr;
 use std::fmt;
 
+/*  This file is part of Software IPv6 Router in Rust.
+
+    Software IPv6 Router in Rust is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Software IPv6 Router in Rust is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Software IPv6 Router in Rust.  If not, see <https://www.gnu.org/licenses/>.
+
+    Copyright 2018,2019 Oliver Black
+*/
+
 pub struct Routing {
     //hash table for now, maybe move to something more complex
     routing_table:HashMap<Ipv6Addr, (MacAddr, MacAddr)>,

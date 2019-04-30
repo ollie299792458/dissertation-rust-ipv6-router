@@ -7,6 +7,10 @@ use pnet::packet::ethernet::{EthernetPacket, MutableEthernetPacket};
 
 use std::env;
 
+/*
+* This file is not part of Software IPv6 Router in Rust, it is an example from https://docs.rs/pnet
+*/
+
 // Invoke as echo <interface name>
 fn main() {
     let interface_name = env::args().nth(1).unwrap();

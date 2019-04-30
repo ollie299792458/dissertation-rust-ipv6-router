@@ -10,6 +10,10 @@ use std::env;
 use std::thread;
 use pnet::util::MacAddr;
 
+/*
+This file is not part of Software IPv6 Router in Rust, it is a modified example from: https://docs.rs/pnet
+*/
+
 fn double_diode(left_interface_name: &str, right_interface_name: &str) {
 
     println!("Welcome to Oliver's double ethernet diode");
