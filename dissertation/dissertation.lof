@@ -4,6 +4,7 @@
 \contentsline {figure}{\numberline {2.2}{\ignorespaces Router Design}}{16}{figure.2.2}
 \contentsline {figure}{\numberline {2.3}{\ignorespaces Layer Separation}}{17}{figure.2.3}
 \addvspace {10\p@ }
+\contentsline {figure}{\numberline {3.1}{\ignorespaces Code for starting a transmitting thread, returning a thread safe pipe}}{22}{figure.3.1}
 \addvspace {10\p@ }
 \addvspace {10\p@ }
 \addvspace {10\p@ }
