@@ -116,30 +116,43 @@ Many thanks to:
 \pagestyle{headings}
 
 \chapter{Introduction}
-Slowly but surely the internet is making progress towards IPv6, and how do pages of Requests for Comments (RFCs) translate into real world network components. The aim of this project was to develop an IPv6 Router in Rust that explores the functionality of IPv6, and how different parts of the various standards fit together. The project has been a success, I have produced a functioning router and accompanying test suite.
+\label{chap::introduction}
+Slowly but surely the internet is making progress towards IPv6, but how do pages of Requests for Comments (RFCs) translate into real world network components? The aim of this project was to develop an IPv6 Router in Rust that explores the functionality of IPv6, and how different parts of the various standards fit together. The project has been a success, I have produced a functioning router and accompanying test suite.
 
 \bigskip
 
-Due to the popularity of the Internet, there are now not enough IPv4 addresses to go around. IPv6 is the incoming internet addressing standard that solves numerous issues with IPv4.  Primarily it increases the number of addresses, however it also fixes many flaws in the IPv4 design, and standardises common non-standard practices. For example, the Time To Live in IPv4 was defined partly in terms of seconds left to live\cite{ipv4_rfc}, but in practice was decremented by 1 every hop between nodes. In IPv6 the field is accurately renamed to Hop Limit, and is now defined in terms of hops between nodes (as opposed to seconds). Many subtle decisions like this have gone into the IPv6 standard, with an aim to making an internet that works well, rather than one that just works.
+Due to the popularity of the Internet, there are now not enough IPv4 addresses to go around. IPv6 is the incoming internet addressing standard that solves numerous issues with IPv4.  Primarily it increases the number of addresses, however it also fixes many flaws in the IPv4 design, and standardises common non-standard practices. For example, the Time To Live in IPv4 was defined partly in terms of seconds left to live\cite{ipv4_rfc}, but in practice was just decremented by 1 on every hop between nodes. In IPv6 the field is accurately renamed to Hop Limit, and is now defined in terms of hops between nodes (as opposed to seconds). Many subtle decisions like this have gone into the IPv6 standard, with an aim to making an internet that works well, rather than one that just works.
 
 \bigskip
 
-Rust\cite{rust} is an up and coming modern low level programming language. It aims to match the performance of C++ without sacrificing memory safety, and avoiding garbage collection. It does this through zero-cost high level abstractions such as \textit{ownership} and \textit{lifetimes}. For example, if you pass a struct to a function, that function then owns that struct, with it being inaccessible after the function returns. It is possible for functions to borrow values instead, using "\texttt{\&}", similar to passing by reference.  I chose Rust for my project as it can be easier to debug than C or C++, but mainly because I was interesting in learning Rust.
+Rust\cite{rust} is an up and coming modern low level programming language. It aims to match the performance of C/C++ without sacrificing memory safety, and avoiding garbage collection. It does this through zero-cost high level abstractions such as \textit{ownership} and \textit{lifetimes}. For example, if you pass something to a function, that function then owns that and everything it owns, with it being inaccessible after the function returns. It is possible for functions to borrow values instead, using ``\texttt{\&}'', similar to passing by reference.  I chose Rust for my project as it can be easier to debug than C or C++, but mainly because I was interesting in learning Rust.
 
 \bigskip
 
-Mininet\cite{mininet} is an open source virtual network simulator that was developed at Stanford and until 2016 was used in the Part 1B Computer Networking course, it is written in Python.  It creates lightweight virtual networks by making use of Linux's \textit{networked namespaces}, allowing processes to share a kernel, yet be behind different network interfaces. This made it the ideal candidate to build my router and test suite on top of.
+Mininet\cite{mininet} is an open source virtual network simulator that was developed at Stanford and until 2016 was used in the Part 1B Computer Networking course, it is written in Python.  It creates lightweight virtual networks by making use of Linux's \textit{networked namespaces}, allowing processes to share a kernel, yet be behind different network interfaces. This made it the ideal candidate to build my router and test suite on top of. A simple IPv4 router\cite{simple_router} already exists, and can be ran on top of Mininet, it explores how IPv4 works quite effectively.  Seeing this was one of the key inspirations for my project.
 
 \bigskip
 
-Routers are the backbone of the internet, at the most simple level many of them have a \textit{control plane} that deals with addressing, and a \textit{forwarding plane} that deals with actually sending packets. There are many open source routers out there, but almost all of them have lots of IPv4 code. This makes it difficult to isolate and understand how the IPv6 part actually works.  Starting from scratch allows you to avoid having to deal with IPv4 at all.  Using the IPv6 standard as a framework, combined with some knowledge about the internals of routers, it is possible to develop and IPv6 router that is stable, small, simple, \& fast.
+Routers are the backbone of the internet, at the most simple level many of them have a \textit{control plane} that deals with addressing, and a \textit{forwarding plane} that deals with actually sending packets. There are many open source routers out there, but almost all of them have lots of IPv4 code. This makes it difficult to isolate and understand how the IPv6 part actually works.  Starting from scratch allows you to avoid having to deal with IPv4 at all.  
+
+\bigskip
+
+Using the IPv6 standard as a framework, combined with some knowledge about the internals of routers, it is possible to develop and IPv6 router that is stable, small, simple, \& fast.  Such a router could continue to be developed until it could be deployed on actual hardware, but the implementation and testing required meant this was not an objective of this project.  Instead, the aim is to develop a router that implements a sub-set of the IPv6 standard, hopefully including everything an IPv6 router is required by the standards to implement.  In the remainder of this dissertation I will discuss the preparation, implementation, and evaluation of this project.
 
 \chapter{Preparation}
 
 Before starting the implementation lots of research and design needed to be done. Lots of research was done into IPv6 RFCs and which aspects were required to be implemented, and which were not. The router software was then designed to provide a framework within which these aspects could be implemented.  Additionally a test plan needed to be made, to enable effective evaluation of the finished product.
 
+\section{Starting Point}
+This project was in areas I was interested in and had some experience in. Those areas were all, however, approached from new angles:
+\begin{itemize}
+\item \textbf{Low-level Systems Programming:} As well as the Part 1B C course I had done several internships that involved a substantial amount of low-level programming in C. However I had never written any project in Rust before.
+\item \textbf{Network Programming:} I had completed the Part 1B Computer Networking course, so had some theoretical understanding.  I had also worked on side assignment of a large networking project during an internship.  However I had never worked on a networking project by myself from the ground up before.
+\item \textbf{Testing:} I had obviously written tests for my own code before, and had been exposed to large testing frameworks during internships.  However I had never devised my own formal test plan and developed my own test bench before.
+\end{itemize}
+
 \section{Research}
-An analogous project for IPv4 called Simple Router already exists\cite{simple_router} (it used to be a recommended extension task for the Part 1B Computer Networking course).  It is implemented in C, but it ran on top of Mininet.  The implementation didn't help at all (due to being in C and for IPv4), but it running on Mininet demonstrates that running a router on Mininet is feasible.  Additionally the Mininet code that ran the Simple Router helped me in designing my test bench.
+An analogous project for IPv4 called Simple Router already exists\cite{simple_router} (it used to be a recommended extension task for the Part 1B Computer Networking course).  It is implemented in C, but it ran on top of Mininet.  The implementation didn't help at all (due to being in C and for IPv4), but it running on Mininet demonstrates that running a router on Mininet is feasible.  Additionally the Mininet python code that ran the Simple Router's executable helped me in designing my test bench.
 
 \bigskip
 
@@ -220,6 +233,40 @@ ICMPv6 is /textit{needed} for any IPv6 router.  However, in order to test the ba
 
 \bigskip
 
+Additionally I thought about what my project did not need to do. I have already discussed briefly in my \hyperref[chap::introduction]{Introduction} that I did not want to require my router be able to be ran on actual hardware, as this would add needless complexity when my aim is to explore and illuminate the IPv6 requirements. 
+
+I did not want to bother with any experimental/unused features, as they don't much help understand the IPv6 requirements. For example the flow label in the IPv6 header can in theory be used to prioritise real time packets, and several other uses have been suggested, however it can just be ignored by the standard, and I believe that is what many routers do.  The same can be applied to many IPv6 extension headers, I planned to evaluate all my extension requirements to see if they met this criterion after finishing my core requirements.
+
+I didn't want to get involved with cross-layer optimisations, as these would also not help to understand the IPv6 requirements.  Secondly, this would not be particularly useful, as the nature of means my router has few bottlenecks, but it is often in bottlenecks that such cross-layer optimisations are used.
+
+Mininet does allow for artificially reducing the MTU of links, and through the help of helper applications artificially dropping packets and increasing latency.  However, my aim was not to produce a high performance router, so any requirement based on performance was also not what I was looking for.
+
+\bigskip
+
+To summarise, here are the requirements for my router, categorised by type, starting with my basic core requirements:
+\begin{itemize}
+\item Send packets to the correct hardware interface in accordance with the static routing rules provided
+\item Deal with IPv6 headers in accordance with the standard (Hop limit, etc)
+\end{itemize}
+My advanced core requirements:
+\begin{itemize}
+\item ICMPv6
+\item Multicast
+\item Anycast
+\end{itemize}
+My extension requirements:
+\begin{itemize}
+\item IPv6 extension headers
+\item DHCPv6
+\item SLAAC
+\end{itemize}
+My non-goals, things that would needlessly complicate the project:
+\begin{itemize}
+\item To be stable, complete, fast, \& compatible enough to be easily run on real hardware in a real world environment.
+\item Implementing experimental or unused features - specifically those potentially covered by my extension requirements.
+\item Higher layer packet inspection
+\item Performance based goals (throughput, etc)
+\end{itemize}
 For a formal list of the requirements I came up with (along with identifiers and associated tests) see \hyperref[appendix::requirements]{Appendix A}.
 
 \section{Design}
@@ -329,20 +376,29 @@ I planned to make up my test bench from Mininet and a couple of helper applicati
 
 \bigskip
 
-When formalising the results of my analysis into a list of tests there were two key steps. The first, a simple one, was numbering everything so I wouldn't get lost or forget any requirements.  Secondly I had to think of the test themselves, this normally included a test for the given functionality when it should happen, a test for it not happening when it shouldn't happen, and any edge case tests I could thing of.  For example, hop limit decrement, when a packet passes through the router its hop limit should be decreased by 1 and the packet sent on its way; when the packet has a hop limit of 1 or 0 on arrival it should be dropped and not sent on its way, and if, the packet has a hop limit of 1 and is addressed to the router it should not be dropped, it should instead be handed up a layer. 
+When formalising the results of my analysis into a list of tests there were two key steps. The first, a one, was numbering everything so I wouldn't get lost or forget any requirements.  Secondly I had to think of the test themselves, this normally included a test for the given functionality when it should happen, a test for it not happening when it shouldn't happen, and any edge case tests I could thing of.  For example, hop limit decrement, when a packet passes through the router its hop limit should be decreased by 1 and the packet sent on its way; when the packet has a hop limit of 1 or 0 on arrival it should be dropped and not sent on its way, and if, the packet has a hop limit of 1 and is addressed to the router it should not be dropped, it should instead be handed up a layer. 
 
 \bigskip
 
 To avoid all the tests being dependent on an almost complete implementation of the router. If we return to the example hop limit given above the router should send an ICMPv6 \textit{Time Exceeded} message when a packet is dropped.  However, this would mean any test for hop limit depends on a correct implementation of ICMPv6, as well as the correct implementation of Hop Limit.  As a result every test can only rely on functionality already implemented.  My numbering system happened to match my planned order of implementation, so just reading off all the previous tests lets you know which features that test potentially relies on.  Back to the hop limit example, this means that success of the hop limit test was judged by the packet not continuing and log messages being outputted by the router process. When it came to test Time Exceeded though it could rely on the already implemented hop limit, so the planned test involved sending a packet with hop limit 0 and testing for a Time Exceeded response.
 
+\section{Professional Practice}
+This is a brief section on issues related to professional 
+
 \chapter{Implementation}
 \label{chap::implementation}
+
+Implementing my router was an exciting iterative process, with every
 
 \section{Router}
 
 explain design into practice
 
 static addressing
+
+Code for threads
+Code for separation
+Code for multithreaded routing table
 
 \section{Test Bench}
 
@@ -353,6 +409,14 @@ Mention flooding success then test plan stuff - maybe in router?
 
 Maybe some stuff from evaluation here
 
+\section{Software Engineering}
+\label{sec::soft_eng}
+
+Iterative - explain
+Agile - explain
+Changed requirements
+No requirements for headers, 
+
 \chapter{Evaluation}
 
 Extension headers and ICMPv6
@@ -360,6 +424,7 @@ ICMPv6 erroneous header, fragment reconstruction, destination unreachable
 Local and subnet addresses - maybe explain more earlier
 lack of end to end testing
 code coverage
+difficulties with mininet
 
 \chapter{Conclusion}
 
