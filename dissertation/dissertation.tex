@@ -126,7 +126,7 @@ Due to the popularity of the Internet, there are now not enough IPv4 addresses t
 
 \bigskip
 
-Rust\cite{rust} is an up and coming modern low level programming language. It aims to match the performance of C/C++ without sacrificing memory safety, and avoiding garbage collection. It does this through zero-cost high level abstractions such as \textit{ownership} and \textit{lifetimes}. For example, if you pass something to a function, that function then owns that and everything it owns, with it being inaccessible after the function returns. It is possible for functions to borrow values instead, using ``\texttt{\&}'', similar to passing by reference.  I chose Rust for my project as it can be easier to debug than C or C++, but mainly because I was interesting in learning Rust.
+Rust\cite{rust} is an up and coming modern low level programming language. It aims to match the performance of C/C++ without sacrificing memory safety, and avoiding garbage collection. It does this through zero-cost high level abstractions such as \textit{ownership} and \textit{lifetimes}. For example, if you pass something to a function, that function then owns that and everything it owns, with it being inaccessible after the function returns. It is possible for functions to borrow values instead, using `\verb!&!', similar to passing by reference.  I chose Rust for my project as it can be easier to debug than C or C++, but mainly because I was interesting in learning Rust.
 
 \bigskip
 
@@ -420,7 +420,11 @@ The main router was implemented requirement by requirement, as set out in \hyper
 
 \bigskip
 
-One of the early issues I encountered was implementing a shared map of transmission channels, as described in \hyperref[sec::design]{Design}. There is a method in pnet\cite{pnet_rust} called \verb!channel() -> Channel!, where a \verb!Channel! is a pair of pipes, one receiving and one transmitting.  I planned to give each receiving thread a receiving pipe, and give them all a map from MAC address to transmitting pipe for the sending address.  Unfortunately the pipe type used by pnet does not support sharing across threads (and this is enforced by the rust type system). So instead I had to have one additional thread for each transmitting pipe, with another thread safe pipe receiver associated with each transmitting thread, and all the corresponding transmitting thread safe pipes in the map.  This worked without much issues, partly because the map never changed, so was cloned across threads.  See \hyperref[fig::sending]{Figure }\ref{fig::sending} for the code that creates a thread safe channel.
+The first thing I did was write a very simple Ethernet repeater, that connected to two interfaces and forwarded all packets as is, on the other interface.  This demonstrated pnet\cite{pnet_rust} worked as I expected, and allowed me to move on.  The next step was implementing the the shared map of channels to allow forwarding on a specific interface, the shared routing table to allow working out which interface to forward on, and the separation of layers to allow easily adding IPv6 feautres and ICMPv6 later.
+
+\bigskip
+
+One of the early issues I encountered was implementing a shared map of transmission channels, as described in \hyperref[sec::design]{Design}. There is a method in pnet\cite{pnet_rust} called \verb!channel() -> Channel!, where a \verb!Channel! is a pair of pipes, one receiving and one transmitting.  I planned to give each receiving thread a receiving pipe, and give them all a map from MAC address to transmitting pipe for the sending address.  Unfortunately the pipe type used by pnet does not support sharing across threads (and this is enforced by the rust type system). So instead I had to have one additional thread for each transmitting pipe, with another thread safe pipe receiver associated with each transmitting thread, and all the corresponding transmitting thread safe pipes in the map.  This worked without much issues, partly because the map never changed, so was cloned across threads.  See \hyperref[fig::sending]{Figure }\ref{fig::sending} for the code that creates a thread safe channel. Also, the packet representations used by pnet can't be sent over a channel used by multiple threads, as they don't implement the \verb!Clone! trait, however the underlying byte buffer does implement the \verb!Clone! trait. A trait in Rust is similar to an interface in a language like Java.
 
 \begin{figure}
 \centering
@@ -449,23 +453,51 @@ fn sender_loop(mut sender: Box<DataLinkSender>,
 
 \bigskip
 
+Sharing the routing table between layers was difficult.  I could have just generated a map of IPv6 addresses to MAC addresses on router start and shared it analogously to the map of MAC addresses to interfaces. However, my extension goals included implementing DHCPv6 and SLAAC, both of which require the routing table to be editable.  To allow this change without having to edit the forwarding layer too much it made sense to have a separate control thread with write access to the routing table, and give all the reading threads read access.  I did this even though as it stands the control thread sets up the static routing then exits.  Rust enforces safety, so in order to share the structure between threads it needed to be put inside an \verb!Arc! (Atomically Reference Counted)\cite{rust_arc} a thread-safer reference counting pointer.  This doesn't actually support the multiple reader single writer semantics required for DHCPv6 or SLAAC, but simply swapping it out for a RwLock\cite{rust_rwlock} would be sufficient.
 
+\bigskip
 
-Separation
+The static routing rules themselves were read from a text file (that was created by the test bench). It had quite a simple format, the first line was the IPv6 address of the default route, the second line that of the router.  Every following line was an IPv6 address, then by an `\verb!@!' followed by the pair of MAC addresses for the associated interface (separated by a `\verb!,!').  Little validation was performed when parsing this file, as any time spent improving error reporting in the case of invalid files could be better spent working towards implementing DHCPv6 or SLAAC, and rendering the static addressing obsolete. Rust makes reading text files easy, through parsing traits.
 
-Static
+\bigskip
 
-Routing table - ARC
+Separating each layer was quite simple, the ethernet layer received a packet, called the IPv6 function, which in turn sometimes called the ICMPv6 layer.  My plan was to hand a pair of packets up the layers (the received packet and the new packet to be sent), with each layer stripping off the headers and only handing the rest down to the next layer.  Unfortunately this was complicated by the design of pnet.  A packet in pnet is merely a wrapper for an underlying byte buffer, this is sensible as it reduces copying.  Everything in Rust can only have a maximum of one mutable reference at a time.  A mutable ethernet packet in pnet refers to the entire of the underlying buffer, both header and payload.  This means that if you have a mutable ethernet packet it is impossible to create a mutable IPv6 packet from the payload and then edit both of them.  I believe this is a design flaw in pnet, as the solution is to create a fresh buffer for the ipv6 packet and then copy the payload across, resulting in extra copies. Instead creating a packet from a buffer should return a tuple of the header and the payload, allowing them to be owned and mutated separately, with each owning a different \verb!slice! of the underlying buffer. This can be better seen in  \hyperref[fig::mutability]{Figure }\ref{fig::mutability}.
 
-Snippets for each - or appendix
+\begin{figure}
+\centering
+\begin{varwidth}{\linewidth}
+\begin{verbatim}
+let mut buffer = vec![0;new_packet.payload().len()];
+let mut new_ipv6_packet = MutableIpv6Packet::new(&mut buffer).unwrap();
+new_ipv6_packet.set_payload_length(
+    (new_packet.payload().len()-40) as u16);
 
+let (source, destination) = 
+    match transform_ipv6_packet(
+        old_ipv6_packet, &mut new_ipv6_packet, routing) {
+    Ok(p) => p,
+    Err(e) => return Err(e),
+};
 
+new_packet.set_destination(destination);
+new_packet.set_source(source);
+new_packet.set_ethertype(Ipv6);
+new_packet.set_payload(new_ipv6_packet.packet());
+\end{verbatim}
+\end{varwidth}
+\caption{Excerpt from Ethernet layer: creates and IPv6 packet from a new buffer, lends it to the IPv6 layer, then copies the result into the Ethernet packet}
+\label{fig::mutability}
+\end{figure}
 
-explain design into practice
+\bigskip
+
+Due to how I separated the layers it was easy to 
 
 \section{Test Bench}
 
 Mininet
+
+static routing - soliticed (below)
 
 Mention flooding success then test plan stuff - maybe in router?
 
@@ -509,7 +541,7 @@ Hop limit doesn’t work with ping
 
 \chapter{Conclusion}
 
-Capitilisation, grammar, spelling, test bench or suite, forwarding or data plane
+Capitilisation, grammar, spelling, test bench or suite, forwarding or data plane, capital Rust, lower case pnet, ethernet caps?
 https://www.cl.cam.ac.uk/teaching/projects/pinkbook/node18.html
 
 
@@ -525,6 +557,10 @@ https://www.cl.cam.ac.uk/teaching/projects/pinkbook/node18.html
 \bibitem{mininet} Mininet, a network virtualisation library in Python, \url{http://mininet.org/}
 
 \bibitem{pnet_rust} pnet, a low-level networking API for rust, \url{https://docs.rs/pnet}
+
+\bibitem{rust_arc} Arc, a thread safe reference counted pointer for Rust, \url{https://doc.rust-lang.org/std/sync/struct.Arc.html}
+
+\bibitem{rust_rwlock}RwLock, a multiple reader single writer lock for Rust, \url{https://doc.rust-lang.org/std/sync/struct.RwLock.html}
 
 \bibitem{ipv6_rfc} Internet Protocol, Version 6 (IPv6) Specification, \href{https://tools.ietf.org/html/rfc8200}{RFC 8200}, July 2017
 
