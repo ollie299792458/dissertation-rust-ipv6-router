@@ -544,15 +544,26 @@ ICMPv6 often requires packets be sent not to their destination, but back to thei
 
 \section{Test Bench}
 
-As outlined in \hyperref[sec::test_plan]{Test Plan} 
+As outlined in \hyperref[chap::preparation]{Preparation} a key part of this project is the test bench itself. Without the test bench it is impossible to verify that my router works as expected.  Below I go into detail about how I implemented the test bench, and issues I had.
 
-Mininet
+\bigskip
 
-static routing - soliticed (below)
+Initially I thought Mininet\cite{mininet} supported IPv6.  However when I set up a network, and tried to use \verb!ping6! between two nodes it didn't work.  This is because Mininet does not support IPv6, and doesn't allocate IPv6 addresses to network nodes.  As described in \hyperref[sec::test_plan]{Test Plan} I chose to write a wrapper for Mininet that added the IPv6 functionality I required.  This wrapper is not as resilient as Mininet itself, it requires operations to be performed in a certain order, that said, it does work, and effectively wraps around Mininet to support IPv6 in a subset of Mininet's usecases.
+
+\bigskip
+
+enable ipv6 and allocate addresses - map
+
+adding links to the router - setting mac address - router is special case
+
+default route - own method - special case
+
+make static routing file - solicited multicast addresses
+
+\bigskip
+
 
 Mention flooding success then test plan stuff - maybe in router?
-
-Solicited multicast addresses - then hop limit
 
 
 Maybe some stuff from evaluation here
@@ -588,6 +599,8 @@ Test coverage - 95%
 
 Routing head not supported - extension headers for ICMPv6 packets
 Hop limit doesn’t work with ping
+
+HOW TO BUILD AND RUN
 
 
 \chapter{Conclusion}
