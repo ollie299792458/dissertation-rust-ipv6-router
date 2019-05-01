@@ -1,5 +1,7 @@
 # Software IPv6 Router in Rust using Mininet for University of Cambridge Part II (3rd Year) Dissertation
 
+The router itself is called Luyou.
+
 For more information please check out my dissertation in ./dissertation/
 
 To run the router:

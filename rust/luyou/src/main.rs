@@ -33,7 +33,7 @@ mod forwarding;
 
 fn main() {
 
-    println!("Welcome to Oliver's Software IPv6 Router");
+    println!("Welcome to Luyou - Oliver's Software IPv6 Router");
 
     let config_file = env::args().nth(1).unwrap();
 
