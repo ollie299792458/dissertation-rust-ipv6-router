@@ -9,6 +9,14 @@
 \usepackage{varwidth}
 \usepackage{tikz}
 \usetikzlibrary{shapes,arrows,positioning,chains}
+\usepackage{listings}
+\lstdefinestyle{tree}{
+    literate=
+    {├}{{\smash{\raisebox{-1ex}{\rule{1pt}{\baselineskip}}}\raisebox{0.5ex}{\rule{1ex}{1pt}}}}1 
+    {─}{{\raisebox{0.5ex}{\rule{1.5ex}{1pt}}}}1 
+    {└}{{\smash{\raisebox{0.5ex}{\rule{1pt}{\dimexpr\baselineskip-1.5ex}}}\raisebox{0.5ex}{\rule{1ex}{1pt}}}}1 
+    {│}{{\smash{\raisebox{-1ex}{\rule{1pt}{\baselineskip}}}\raisebox{0.5ex}{\rule{1ex}{0pt}}}}1 
+  }
 
 \raggedbottom                           % try to avoid widows and orphans
 \sloppy
@@ -377,6 +385,7 @@ node [transform canvas={xshift=+42mm}, text width=8cm, align=left] {New ICMPv6 P
 Both of these design choices made the implementation much easier, separating the code into functionally separate sections, reducing the risk of introducing bugs, and most importantly providing a structured framework within which to code.
 
 \section{Test Plan}
+\label{sec:test_plan}
 
 With requirements and a design of the router completed, I needed to come up with a plan of how I was going to verify that my router was functioning as expected.  This was divided into two parts, the design of the test bench, and secondly the list of tests to be run on it.
 
@@ -412,7 +421,47 @@ I don't believe there are any ethical issues involved in my project, and there i
 
 Implementing my router was an exciting iterative process, with many challenges, but also a real sense of achievement every time I implemented something I had never done before and again when it passed my tests.  There were two main parts to implement, the router itself and the test bench.  Both had their own different challenges.  The relationship between the two is explained in more detail in the third section about \hyperref[sec::soft_eng] {Software Engineering} practices used.
 
+
+\addcontentsline{toc}{section}{Repository Overview}
 \section*{Repository Overview}
+
+Here is the repository overview, the project is made up of a python application (the test bench) and three rust applications (a test client, a test server, and the router itself).  To shorten the tree \verb!*comments*! have been added inline.
+
+\begin{lstlisting}[style=tree]
+.
+├── dissertation
+│   └── *latex files*
+├── python
+│   ├── test
+│   │   ├── __init__.py
+│   │   ├── test_*test number*.py
+│   │   ├── test_example.py
+│   │   ├── test_framework.py *mininet wrapper*
+│   │   ├── test_playground.py 
+│   │   └── test_tw_example.py *example mininet application*
+│   └── __init__.py
+├── rust
+│   ├── router
+│   │   ├── resource
+│   │   │   └── routing.txt *static routing file*
+│   │   └── src
+│   │       ├── examples
+│   │       │   └── *related examples*
+│   │       ├── control.rs *control plane*
+│   │       ├── forwarding.rs *forwarding plane*
+│   │       └── main.rs *main router file*
+│   ├── test_client
+│   │   └── src
+│   │       └── main.rs *test client*
+│   └── test_server
+│       └── src
+│           └── main.rs *test server
+├── COPYING.txt
+├── LICENSE.txt
+├── README.md
+└── test.sh *script to start tests*
+\end{lstlisting}
+
 
 \section{Router}
 
@@ -491,9 +540,11 @@ new_packet.set_payload(new_ipv6_packet.packet());
 
 \bigskip
 
-Due to how I separated the layers it was easy to 
+ICMPv6 often requires packets be sent not to their destination, but back to their source address.  Initially this appeared to be a challenge, as it looked like I needed a completely separate path for ICMPv6 packets addresses to the router. However due to how I separated the layers this was not necessary. Instead the IPv6 layer passed the old ICMPv6 packet and the old source and destination addresses to the ICMPv6 layer. The ICMPv6 layer then responded with the new ICMPv6 packet, and the new source and destination addresses (for example, with an \verb!Echo Request! ICMPv6 packet, source and destination would be swapped for the \verb!Echo Reply! response).  As long as the IPv6 packet honestly copied these into the new IPv6 packet, and worked out the MAC addresses to pass back to the Ethernet based on the new source and destination addresses, it would work perfectly. This demonstrates how the separation of layers allows new features to leverage existing well tested code effectively, reducing code duplication and increasing reliability.
 
 \section{Test Bench}
+
+As outlined in \hyperref[sec::test_plan]{Test Plan} 
 
 Mininet
 

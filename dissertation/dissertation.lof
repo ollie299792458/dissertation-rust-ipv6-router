@@ -4,8 +4,8 @@
 \contentsline {figure}{\numberline {2.2}{\ignorespaces Router Design}}{16}{figure.2.2}
 \contentsline {figure}{\numberline {2.3}{\ignorespaces Layer Separation}}{17}{figure.2.3}
 \addvspace {10\p@ }
-\contentsline {figure}{\numberline {3.1}{\ignorespaces Code for starting a transmitting thread, returning a thread safe pipe}}{22}{figure.3.1}
-\contentsline {figure}{\numberline {3.2}{\ignorespaces Excerpt from Ethernet layer: creates and IPv6 packet from a new buffer, lends it to the IPv6 layer, then copies the result into the Ethernet packet}}{23}{figure.3.2}
+\contentsline {figure}{\numberline {3.1}{\ignorespaces Code for starting a transmitting thread, returning a thread safe pipe}}{23}{figure.3.1}
+\contentsline {figure}{\numberline {3.2}{\ignorespaces Excerpt from Ethernet layer: creates and IPv6 packet from a new buffer, lends it to the IPv6 layer, then copies the result into the Ethernet packet}}{24}{figure.3.2}
 \addvspace {10\p@ }
 \addvspace {10\p@ }
 \addvspace {10\p@ }
