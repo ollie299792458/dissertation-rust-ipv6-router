@@ -80,21 +80,21 @@ Name:               & \bf Oliver Black                      \\
 College:            & \bf Selwyn College                     \\
 Project Title:      & \bf Software IPv6 Router in Rust \\
 Examination:        & \bf Computer Science Tripos -- Part II, July 2001  \\
-Word Count:         & \bf "FIX ME\& footnote" \footnotemark[1]
+Word Count:         & \bf 6000 \footnotemark[1]
                        \\
-Project Originator: & Oliver Black \& Dr Richard Watts      \\
+Project Originator: & Oliver Black \& Richard Watts      \\
 Supervisor:         & Andrew Moore                   \\ 
 \end{tabular}
 }
 \footnotetext[1]{This word count was computed
-by \texttt{detex diss.tex | tr -cd '0-9A-Za-z $\tt\backslash$n' | wc -w}
+by copying the relevant part of the dissertation into \url{https://wordcounter.net/}
 }
 \stepcounter{footnote}
 
 
 \section*{Original Aims of the Project}
 
-The IPv6 standard contains a large number of complex requirements, complicating understanding. I aim to design and implement a simple IPv6 router using Rust\cite{rust} that behaves as specified in the IPv6 RFCs\cite{ipv6_rfc}. This router should implement the minimum functionality required by the relevant standards, yet still be functional, minimal, \& stable.  Rust is a new programming language that aims to be as fast as C while maintaining memory safety, I wanted to understand how practical it was to develop in.
+The IPv6 standard contains a large number of complex requirements, complicating understanding. I aim to design and implement a simple IPv6 router (called Luyou) using Rust\cite{rust} that behaves as specified in the IPv6 RFCs\cite{ipv6_rfc}. This router should implement the minimum functionality required by the relevant standards, yet still be functional, minimal, \& stable.  Rust is a new programming language that aims to be as fast as C while maintaining memory safety, I wanted to understand how practical it was to develop in.
 
 \section*{Work Completed}
 
@@ -158,7 +158,7 @@ This project was in areas I was interested in and had some experience in. Those 
 \begin{itemize}
 \item \textbf{Low-level Systems Programming:} As well as the Part 1B C course I had done several internships that involved a substantial amount of low-level programming in C. However I had never written any project in Rust before.
 \item \textbf{Network Programming:} I had completed the Part 1B Computer Networking course, so had some theoretical understanding.  I had also worked on side assignment of a large networking project during an internship.  However I had never worked on a networking project by myself from the ground up before.
-\item \textbf{Testing:} I had obviously written tests for my own code before, and had been exposed to large testing frameworks during internships.  However I had never devised my own formal test plan and developed my own test bench before.
+\item \textbf{Testing:} I had obviously written tests for my own code before, and had been exposed to large testing frameworks during internships.  However I had never devised my own formal test plan and developed my own test bench before. I also only had brief experience with Python.
 \end{itemize}
 In terms of existing software, the following where used or built upon by my project:
 \begin{itemize}
@@ -548,15 +548,23 @@ As outlined in \hyperref[chap::preparation]{Preparation} a key part of this proj
 
 \bigskip
 
-Initially I thought Mininet\cite{mininet} supported IPv6.  However when I set up a network, and tried to use \verb!ping6! between two nodes it didn't work.  This is because Mininet does not support IPv6, and doesn't allocate IPv6 addresses to network nodes.  As described in \hyperref[sec::test_plan]{Test Plan} I chose to write a wrapper for Mininet that added the IPv6 functionality I required.  This wrapper is not as resilient as Mininet itself, it requires operations to be performed in a certain order, that said, it does work, and effectively wraps around Mininet to support IPv6 in a subset of Mininet's usecases.
+Initially I thought Mininet\cite{mininet} supported IPv6.  However when I set up a network, and tried to use \verb!ping6! between two nodes it didn't work.  This is because Mininet does not support IPv6, and doesn't allocate IPv6 addresses to network nodes.  As described in \hyperref[sec::test_plan]{Test Plan} I chose to write a wrapper for Mininet that added the IPv6 functionality I required.  This wrapper is not as resilient as Mininet itself, it requires operations to be performed in a certain order, that said, it does work, and effectively wraps around Mininet to support IPv6 in a subset of Mininet's use cases.
 
 \bigskip
 
-enable ipv6 and allocate addresses - map
+The first issue I faced was allocating IPv6 addresses to nodes. This was achieved by calling \verb!ifconfig [interface-name] inet6 add [address]! every time a node was added. I then stored the node name and IPv6 address in a two way map, to allow me to easily use the addresses later.
+
+\bigskip
+
+The next big issue came when linking the network up. In general it worked fine, as Mininet links nodes together with Veth (Virtual Ethernet) links, which operate at the link layer.  However, in order to make it easy to debug there were issues when linking to the router
 
 adding links to the router - setting mac address - router is special case
 
+\bigskip
+
 default route - own method - special case
+
+\bigskip
 
 make static routing file - solicited multicast addresses
 
@@ -607,7 +615,13 @@ HOW TO BUILD AND RUN
 
 Capitilisation, grammar, spelling, test bench or suite, forwarding or data plane, capital Rust, lower case pnet, ethernet caps?
 https://www.cl.cam.ac.uk/teaching/projects/pinkbook/node18.html
+Search for identifying information
 
+Add explanation to luyou
+
+literature review
+
+TODO remove TODO
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % the bibliography
