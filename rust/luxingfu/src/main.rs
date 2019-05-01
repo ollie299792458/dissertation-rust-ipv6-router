@@ -28,7 +28,7 @@ use pnet::packet::ipv6::Ipv6Packet;
 fn main() {
     let interface_name = env::args().nth(1).unwrap();
 
-    println!("Server starting");
+    println!("Luxingfu - Server starting");
 
     let interfaces = datalink::interfaces();
 

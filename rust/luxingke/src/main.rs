@@ -46,7 +46,7 @@ fn main() {
 
     let destination_ip = env::args().nth(5).unwrap().parse::<Ipv6Addr>().unwrap();
 
-    println!("Client starting");
+    println!("Luxingke - Client starting");
 
     let interfaces = datalink::interfaces();
 

@@ -85,7 +85,7 @@ class TestFramework(Mininet):
         return self.__address_to_host[address]
 
     def start(self):
-        info("Thank you for using Oliver's Mininet Test Framework\n")
+        info("Thank you for using Luxing - Oliver's Mininet Test Framework for Luyou\n")
 
         result = super(TestFramework, self).start()
 
