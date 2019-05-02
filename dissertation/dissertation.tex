@@ -251,7 +251,7 @@ IPv6 also has many extension headers, but they \textit{need} to be ignored by in
 
 ICMPv6 works alongside IPv6 to send informational and error messages between nodes.  These messages include destination, packet size, hop limit, \& header error messages, and echo request \& reply informational messages. One slightly odd requirement relates back to hop-limit in the IPv6 header, if an arriving packet has a hop limit of 1, it should be discarded, unless the destination node is the router in question.  This only occurs for ICMPv6 messages with Luyou, as it does not support receiving any other packets
 
-ICMPv6 is /textit{needed} for any IPv6 router.  However, in order to test the basic functionality of Luyou it was not required. This is because error reporting functions can be, in part, replaced by log output from Luyou itself. As such, ICMPv6 is an advanced core requirement.
+ICMPv6 is \textit{needed} for any IPv6 router.  However, in order to test the basic functionality of Luyou it was not required. This is because error reporting functions can be, in part, replaced by log output from Luyou itself. As such, ICMPv6 is an advanced core requirement.
 
 \bigskip
 
@@ -410,7 +410,7 @@ This is a brief section on preparation related to professional skills and practi
 
 \bigskip
 
-There could be security exploits in my code, and if anybody would like to adapt my code for use in a real world router I would recommend it is tested afresh.
+There could be security exploits in my code, and if anybody would like to adapt my code for use in a real world router I would recommend it is tested extensively.
 
 \bigskip
 
@@ -429,7 +429,7 @@ Implementing Luyou was an exciting iterative process, with many challenges, but 
 \addcontentsline{toc}{section}{Repository Overview}
 \section*{Repository Overview}
 
-Here is the repository overview, the project is made up of a python application (the test bench - Luxing) and three rust applications (a test client - Luxingke, a test server - Luxingfu, and the router itself - Luyou).  To shorten and explain the tree \verb!*comments*! have been added inline.
+Here is the repository overview, the project is made up of a python application (the test bench - Luxing) and three rust applications (a test client - Luxingke, a test server - Luxingfu, and the router itself - Luyou). To shorten and explain the tree \verb!*comments*! have been added inline. All of these files were written from scratch except for the few examples commented as \verb!from documentation!.
 
 \begin{lstlisting}[style=tree]
 .
@@ -442,7 +442,8 @@ Here is the repository overview, the project is made up of a python application 
 │   │   ├── test_example.py
 │   │   ├── test_framework.py *mininet wrapper*
 │   │   ├── test_playground.py 
-│   │   └── test_tw_example.py *example mininet application*
+│   │   └── test_tw_example.py *example mininet application from
+│   │                           documentation*
 │   └── __init__.py
 ├── rust
 │   ├── luxingfu
@@ -456,7 +457,7 @@ Here is the repository overview, the project is made up of a python application 
 │       │   └── routing.txt *static routing file*
 │       └── src
 │           ├── examples
-│           │   └── *related examples*
+│           │   └── *related examples from documentation*
 │           ├── control.rs *control plane*
 │           ├── forwarding.rs *forwarding plane*
 │           └── main.rs *main router file*
@@ -468,12 +469,13 @@ Here is the repository overview, the project is made up of a python application 
 
 
 \section{Router}
+\label{sec::router}
 
 Luyou was implemented requirement by requirement, as set out in \hyperref[chap::preparation]{Preparation} and\hyperref[appendix::requirements]{Appendix A}.  Version control was performed using git, with backups committed to an \textit{exploratory} branch, with merges into the \textit{master} branch whenever a specific requirement had been completely implemented.
 
 \bigskip
 
-The first thing I did was write a very simple Ethernet repeater, that connected to two interfaces and forwarded all packets as is, on the other interface.  This demonstrated pnet\cite{pnet_rust} worked as I expected, and allowed me to move on.  The next step was implementing the the shared map of channels to allow forwarding on a specific interface, the shared routing table to allow working out which interface to forward on, and the separation of layers to allow easily adding IPv6 feautres and ICMPv6 later.
+The first thing I did was write a very simple Ethernet repeater, that connected to two interfaces and forwarded all packets as is, on the other interface.  This demonstrated pnet\cite{pnet_rust} worked as I expected, and allowed me to move on, and satisfied the flooding requirement.  The next step was implementing the the shared map of addresses to interfaces to allow forwarding on a specific interface, then a shared routing table to allow working out which interface to forward on, and the separation of layers to allow easily adding IPv6 feautres and ICMPv6 later.
 
 \bigskip
 
@@ -564,24 +566,20 @@ The next big issue came when linking the network up. In general it worked fine, 
 
 \bigskip
 
-default route - own method - special case
+Another issue was adding the default route to all nodes.  In order for ping to work effectively the default route needed to be set to the router for all nodes.  This is easily achievable using the \verb!ip -6 route add default via [default-address] src [node-address]! command, but this didn't work.  This is because when allocated in linux IPv6 addresses take a while before shifting to the \verb!UP! state.  Once I had discovered this I added a loop that slept for 100 milliseconds while the output of \verb!ip -6 addr! contained ``\verb!TENTATIVE!'' before trying to update the default route, this fixed the issue.
 
 \bigskip
 
-make static routing file - solicited multicast addresses
+As I was using static routing Luxing needed to generate a routing file for the router describing the network it was in.  This was relatively simple, on router start a text file is created, and filled in according to the format described in \hyperref[sec::router]{Router}.  In order to gather the required information whenever a link was added the relevant IPv6 address and source and destination MAC addresses were stored in a map.  Luyou's and the default gateway's addresses also need to be included in the routing file, which required they not be added as ordinary nodes, and instead be added as their own method. For a long time I couldn't get \verb!ping6! to work via my router, through debugging I discovered this was due to \verb!ping6! making use of \textit{Solicited Multicast Addresses} to send requests and responses. A \textit{Solicited Node Multicast} address is most recognisably used by the \cite{Neighbour Discovery Protocol}\cite{ndp_rfc}. Luxing resolves this by adding the addresses to the static routing file, generating them from the already allocated IPv6 addresses.
 
 \bigskip
 
-
-client and server
-
-Mention flooding success then test plan stuff - maybe in router?
-
-
-Maybe some stuff from evaluation here
+I also wrote a small test client and server in Rust (called Luxingke and Luxingfu).  Both take an argument that determines which test is being run, the client then produces packets and optionally waits for responses, with the server waiting for packets and optionally producing responses.  By using Rust rather than Python for this I could use pnet, which I understood relatively well by this point, avoiding having to learn a new low level networking library.
 
 \section{Software Engineering}
 \label{sec::soft_eng}
+
+Throughout my project I 
 
 Iterative - explain
 Agile - explain
@@ -593,10 +591,11 @@ Packet in packet out rate limiting
 ICMPv6 destination unreachable cannot occur
 
 
-
 \chapter{Evaluation}
 
 WHAT IS HERE AND WHAT IS CONCLUSION
+
+flooding, requirement satisfaction
 
 Extension headers and ICMPv6
 ICMPv6 erroneous header, fragment reconstruction, destination unreachable
@@ -612,7 +611,7 @@ Test coverage - 95%
 Routing head not supported - extension headers for ICMPv6 packets
 Hop limit doesn’t work with ping
 
-HOW TO BUILD AND RUN
+evaluate test bench
 
 
 \chapter{Conclusion}
@@ -623,7 +622,8 @@ Search for identifying information
 Capitalise MAC
 Document of notes and pdf from how to write a dissertation
 
-Add explanation to luyou
+
+HOW TO BUILD AND RUN
 
 literature review
 
@@ -657,6 +657,8 @@ TODO remove TODO
 \bibitem{slaac_rfc} IPv6 Stateless Address Autoconfiguration, \href{https://tools.ietf.org/html/rfc4862}{RFC 4862}, September 2007
 
 \bibitem{dhcpv6_rfc} Dynamic Host Configuration Protocol for IPv6 (DHCPv6), \href{https://tools.ietf.org/html/rfc3315}{RFC 3315}, July 2003
+
+\bibitem{ndp_rfc} Neighbour Discovery Protocol, Neighbor Discovery for IP version 6 (IPv6), \href{https://tools.ietf.org/html/rfc4861}{RFC 4861}, September 2007
 
 \bibitem{simple_router} Simple Router, implementing an IPv4 router in C on Mininet, \url{https://github.com/mininet/mininet/wiki/Simple-Router}
 
