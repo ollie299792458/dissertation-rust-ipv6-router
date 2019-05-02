@@ -548,7 +548,7 @@ ICMPv6 often requires packets be sent not to their destination, but back to thei
 
 \section{Test Bench}
 
-As outlined in \hyperref[chap::preparation]{Preparation} a key part of this project is Luxing. Without Luxing it is impossible to verify that Luyou works as expected.  Below I go into detail about how I implemented Luxin, and issues I had.
+As outlined in \hyperref[chap::preparation]{Preparation} a key part of this project is Luxing. Without Luxing it is impossible to verify that Luyou works as expected.  Below I go into detail about how I implemented Luxin, and issues I had.  Solving these issues involved a lot of trial and error, and I didn't have much experience with networking on Linux.
 
 \bigskip
 
@@ -556,13 +556,11 @@ Initially I thought Mininet\cite{mininet} supported IPv6.  However when I set up
 
 \bigskip
 
-The first issue I faced was allocating IPv6 addresses to nodes. This was achieved by calling \verb!ifconfig [interface-name] inet6 add [address]! every time a node was added. I then stored the node name and IPv6 address in a two way map, to allow me to easily use the addresses later.
+The first issue I faced was allocating IPv6 addresses to nodes. This was achieved by calling \verb!ifconfig [interface-name] inet6 add [address]! every time a node was added. I then stored the node name and IPv6 address in a two way map, to allow me to easily use the addresses later. My wrapper does not support auto allocating IPv6 addresses, you need to specify an address when you create a node, unlike Mininet which allows IPv4 nodes to be created without an address being specified.
 
 \bigskip
 
-The next big issue came when linking the network up. In general it worked fine, as Mininet links nodes together with Veth (Virtual Ethernet) links, which operate at the link layer.  However, in order to make it easy to debug there were issues when linking to Luyou
-
-adding links to the router - setting mac address - router is special case
+The next big issue came when linking the network up. In general it worked fine, as Mininet links nodes together with Veth (Virtual Ethernet) links, which operate at the link layer.  However, in order to make it easy to debug I wanted to be able to choose mac addresses for each node. As for IPv6 addresses I just had them specified on node creation.  However this didn't work for the router as it had multiple interfaces, so required multiple mac addresses. This was resolved by requiring a MAC address for all links but the first involving the router.
 
 \bigskip
 
@@ -622,6 +620,8 @@ HOW TO BUILD AND RUN
 Capitilisation, grammar, spelling, test bench or suite, forwarding or data plane, capital Rust, lower case pnet, ethernet caps?
 https://www.cl.cam.ac.uk/teaching/projects/pinkbook/node18.html
 Search for identifying information
+Capitalise MAC
+Document of notes and pdf from how to write a dissertation
 
 Add explanation to luyou
 
