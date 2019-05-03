@@ -88,7 +88,19 @@ fn main() {
         let mut packet= MutableEthernetPacket::new(&mut buffer).unwrap();
         get_packet(&mut packet,interface.mac_address(), destination_mac, source_ip, destination_ip);
         let mut payload = MutableIpv6Packet::new(packet.payload_mut()).unwrap();
+        get_11212_packet(&mut payload, 0);
+        tx.send_to(packet.packet(), None);
+        let mut buffer:Vec<u8> = vec![0;54];
+        let mut packet= MutableEthernetPacket::new(&mut buffer).unwrap();
+        get_packet(&mut packet,interface.mac_address(), destination_mac, source_ip, destination_ip);
+        let mut payload = MutableIpv6Packet::new(packet.payload_mut()).unwrap();
         get_11212_packet(&mut payload, 10);
+        tx.send_to(packet.packet(), None);
+        let mut buffer:Vec<u8> = vec![0;54];
+        let mut packet= MutableEthernetPacket::new(&mut buffer).unwrap();
+        get_packet(&mut packet,interface.mac_address(), destination_mac, source_ip, destination_ip);
+        let mut payload = MutableIpv6Packet::new(packet.payload_mut()).unwrap();
+        get_11212_packet(&mut payload, 2);
         tx.send_to(packet.packet(), None);
     } else if test == "1211" {
         let mut buffer:Vec<u8> = vec![0;70];

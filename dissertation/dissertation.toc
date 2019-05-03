@@ -1,7 +1,7 @@
 \contentsline {chapter}{Cover Sheet}{1}{Doc-Start}
 \contentsline {chapter}{Declaration of Originality}{2}{Doc-Start}
 \contentsline {chapter}{Proforma}{3}{chapter*.2}
-\contentsline {chapter}{Table of Contents}{5}{chapter*.6}
+\contentsline {chapter}{Table of Contents}{6}{chapter*.6}
 \contentsline {chapter}{List of Figures}{7}{chapter*.7}
 \contentsline {chapter}{\numberline {1}Introduction}{9}{chapter.1}
 \contentsline {chapter}{\numberline {2}Preparation}{11}{chapter.2}
@@ -18,9 +18,10 @@
 \contentsline {section}{\numberline {3.3}Software Engineering}{26}{section.3.3}
 \contentsline {chapter}{\numberline {4}Evaluation}{29}{chapter.4}
 \contentsline {section}{\numberline {4.1}Tests}{29}{section.4.1}
-\contentsline {section}{\numberline {4.2}Issues and Observations}{29}{section.4.2}
-\contentsline {section}{\numberline {4.3}Ambitious Case}{29}{section.4.3}
-\contentsline {section}{\numberline {4.4}Other Metrics}{29}{section.4.4}
+\contentsline {section}{\numberline {4.2}Issues and Observations}{30}{section.4.2}
+\contentsline {section}{\numberline {4.3}Ambitious Case}{30}{section.4.3}
+\contentsline {section}{\numberline {4.4}Other Metrics}{30}{section.4.4}
+\contentsline {section}{\numberline {4.5}Goals}{30}{section.4.5}
 \contentsline {chapter}{\numberline {5}Conclusion}{31}{chapter.5}
 \contentsline {chapter}{Bibliography}{33}{chapter*.11}
 \contentsline {chapter}{\numberline {A}Requirements}{35}{appendix.A}

@@ -60,7 +60,7 @@ def run():
      #                             left_address], stdout=sys.stdout, stderr=sys.stdout, shell=True)
     #time.sleep(1)
 
-    info('Test completed: if one packet dropped due to hop limit then one with 9 as 8th octect, then success\n')
+    info('Test completed: if two packets dropped due to hop limit then two with 9 and 1 as 8th octect, then success\n')
     server_process.kill()
     test.stop()
 

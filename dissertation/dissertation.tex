@@ -606,24 +606,27 @@ Evaluating Luyou was relatively complex. Working from the tests I had written an
 
 \section{Tests}
 
-Intro to test
+As I have already mentioned, I wrote many individual tests on Luxing (my test bench) as I was implementing each requirement.  Due to this, when it came to testing Luyou I merely needed to run all the tests and every requirement would be checked.
 
 \bigskip
 
-Are they valid?
+An issue with such tests is whether or not passing the tests means Luyou actually works. Put another way, passing the tests means Luyou does something, but is that 'something' what I wanted Luyou to be.  The tests were defined alongside the requirements, and matched the requirements precisely.  So, as long as the requirements are correct the tests would be.  Additionally the tests themselves were implemented after each feature was implemented (as opposed to concurrently).  This prevents tests being passed by partially hard coding the test itself, and so passing the specific test, but not satisfying the requirement the test is meant to verify. Also the tests deal with many edge cases (see below for more detail). Overall I believe Luyou passing the tests results in a router that matches my requirements.
 
 \bigskip
 
-Some examples
-
-Requirements, step by step
-flooding - mention special case
+An example of a test would be test 11212 which is testing for the correct hop limit, it involves sending four packets, two with hop limits 1 and 0, and two more with hop limits 10 and 2.  The test passes if the packets with hop limits 10 and 2 are received by the server (Luxingfu) with hop limits of 9 and 1, and if the packets with hop limits 1 and 0 are dropped. A later test, test 1215, deals with a hop limit of 1 or 0 and the destination being the router - where the packet should not be dropped immediately.  In the case that the test passes this has tested the general behaviour, the hop limit should be decremented. But more importantly it has tested the edge case behaviour, the two cases where a packet should be dropped, and the case where the packet shouldn't be dropped (but only just).
 
 \bigskip
 
-Conclude - met goals according to tests etc, learnt, continuous integration
+Some of the tests defined at the requirements stage will fail on the final build of Luyou, this is because the requirement was obsoleted. Earlier I talked about how ICMPv6 being implemented would obsolete tests that rely on log output for invalid packets (as an ICMPv6 message is sent instead). However in reality I left those log messages in, allowing the original test to be used, to reduce the amount of test reworking that needed to be done.  However, the test for flooding was removed, due to it being superseded by static routing. 
+
+\bigskip
+
+To conclude, apart from the issues explained in the next section, my tests verify that I met my goals.  My goal to implement a router that satisfied all my core requirements, and although I didn't implement all of these, for those I did implement the tests effectively verify that I met them.  Overall I implemented 10 tests, with each sending and receiving between 1-5 packets. Most importantly for me however, implementing these tests taught me a lot, and I certainly feel better prepared when I have to do something similar in the future.
 
 \section{Issues and Observations}
+
+Any unimplemented requirements
 
 Headers - extension headers - 
 
@@ -636,6 +639,8 @@ ICMPv6 erroneous header
 Destination unreachable - can only occur in some, but no response
 
 Local and subnet addresses - maybe explain more earlier - More in next
+
+unit testing
 
 \section{Ambitious Case}
 ping
@@ -668,7 +673,7 @@ tests
 Capitilisation, grammar, spelling, test bench or suite, forwarding or data plane, capital Rust, lower case pnet, ethernet caps?
 https://www.cl.cam.ac.uk/teaching/projects/pinkbook/node18.html
 Search for identifying information - EDIT PROFORMA PER PINK BOOK/GROUP CHAT
-Capitalise MAC
+Capitalise MAC - edit declaration
 Document of notes and pdf from how to write a dissertation
 
 
@@ -677,6 +682,8 @@ HOW TO BUILD AND RUN
 literature review
 
 add personal goals?
+
+link basic requirements to project proposal
 
 TODO remove TODO
 
