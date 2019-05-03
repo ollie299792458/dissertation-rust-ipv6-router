@@ -17,6 +17,9 @@
 \contentsline {section}{\numberline {3.2}Test Bench}{25}{section.3.2}
 \contentsline {section}{\numberline {3.3}Software Engineering}{26}{section.3.3}
 \contentsline {chapter}{\numberline {4}Evaluation}{29}{chapter.4}
+\contentsline {section}{\numberline {4.1}Tests}{29}{section.4.1}
+\contentsline {section}{\numberline {4.2}Issues \& Observations}{29}{section.4.2}
+\contentsline {section}{\numberline {4.3}Ambitious Case}{29}{section.4.3}
 \contentsline {chapter}{\numberline {5}Conclusion}{31}{chapter.5}
 \contentsline {chapter}{Bibliography}{33}{chapter*.11}
 \contentsline {chapter}{\numberline {A}Requirements}{35}{appendix.A}

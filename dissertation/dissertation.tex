@@ -583,16 +583,16 @@ Due to both the nature of my project - having to produce a functioning router - 
 
 \bigskip
 
-Overall I began by creating a complete list of requirements, then a complete design, then I implemented my router, and then finally I ran all my tests on it.  This is very similar to the \textit{Waterfall} methodology.  This was appropriate (compared to more flexible software engineering methodologies) as my requirements were well defined by RFCs - I did not need to explore and refine requirements as my development progressed. 
+Overall I began by creating a complete list of requirements, then a complete design, then I implemented my router, and then finally I ran all my tests on it.  This is very similar to the \textit{Waterfall} methodology.  This was appropriate (compared to more flexible software engineering methodologies) as my requirements were well defined by RFCs. This meant that I did not need to explore and refine requirements as my development progressed, as would be necessary if I was reacting to user feedback or my own improved understanding.
 
 \bigskip
 
-However, I didn't really follow the Waterfall methodology as it was not particularly appropriate or sensible to complete my implementation as one large chunk.  Instead I completed several prototypes, each implementing a larger set of the requirements:
+However, I didn't really follow the Waterfall methodology as it was not particularly appropriate or sensible to complete the implementation stage as one large chunk.  Instead I completed several prototypes, each implementing a larger set of the requirements than the last:
 \begin{itemize}
 \item \textbf{Flooding:} Packets forwarded on all interfaces.
 \item \textbf{Static Routing:} Packets forwarded on specific interfaces.
 \item \textbf{IPv6 validation:} Invalid IPv6 packets dropped and logged.
-\item \textbf{ICMPv6:} Invalid IPv6 packets responded to and echo request/reply implemented.
+\item \textbf{ICMPv6:} Invalid IPv6 packets responded to with ICMPv6 and echo request/reply implemented.
 \end{itemize}
 For each of these stages I first refined the requirements (partly based on the successes and failings of the last stage), and at the end of each iteration I would produce a more complete prototype, this is similar to the \textit{Spiral} software development methodology. Doing all of the implementation in one would have prevented me from effectively testing parts of the router independently from each other, and made the final testing much more complex.
 
@@ -602,12 +602,23 @@ Every time I implemented an individual requirement I would write tests for that 
 
 \chapter{Evaluation}
 
-WHAT IS HERE AND WHAT IS CONCLUSION
+\section{Tests}
 
-flooding, requirement satisfaction
+Requirements, step by step
+flooding
 
 
-No requirements for headers, 
+
+\section{Issues \& Observations}
+
+Headers
+
+Rate limit
+
+Destination unreacable
+
+\section{Ambitious Case}
+ 
 
 Packet in packet out rate limiting
 ICMPv6 destination unreachable cannot occur
@@ -627,6 +638,8 @@ Routing head not supported - extension headers for ICMPv6 packets
 Hop limit doesn’t work with ping
 
 evaluate test bench
+
+ambitious case - doesn't work due to linux and needing to implement more and mininet
 
 
 \chapter{Conclusion}
