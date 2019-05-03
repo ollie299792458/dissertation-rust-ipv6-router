@@ -594,16 +594,11 @@ However, I didn't really follow the Waterfall methodology as it was not particul
 \item \textbf{IPv6 validation:} Invalid IPv6 packets dropped and logged.
 \item \textbf{ICMPv6:} Invalid IPv6 packets responded to and echo request/reply implemented.
 \end{itemize}
-For each of these stages I first refined the requirements (partly based on the success of the last stage), and at the end I would produce a more complete prototype, this is similar to the \textit{Spiral} software development methodology. Doing all of the implementation in one would have prevented me from effectively testing parts of the router independently from each other, and made the final testing much more complex.
+For each of these stages I first refined the requirements (partly based on the successes and failings of the last stage), and at the end of each iteration I would produce a more complete prototype, this is similar to the \textit{Spiral} software development methodology. Doing all of the implementation in one would have prevented me from effectively testing parts of the router independently from each other, and made the final testing much more complex.
 
 \bigskip
 
-Every time I implemented an individual requirement I would write tests for that requirement and run them (ensuring they pass) before proceeding.  Once they passed I would merge my work (on the \textit{exploratory} branch) into the \textit{master} branch, before continuing with the next requirement back on the \textit{exploratory} branch.  Before merging I would also ensure all previous tests passed.  This would involve either fixing Luyou, or in some cases modifying the test itself (for example if it relied on log output that was no longer there due to the implementation of the ICMPv6 response).  By merging often and ensuring my router continued passing all testsjhfdasiuhfdusaiohfdusioaoh
-
-Maye:
-Instead I implemented requirements in turn, taking the requirement, further clarifying and refining it (e.g. still processing ICMPv6 packets destined for the router when their hop limit = 1).  I then implemented the requirement, and proceeded to add and run tests before moving on to the next requirement.
-
-
+Every time I implemented an individual requirement I would write tests for that requirement and run them (ensuring they pass) before proceeding.  Once they passed I would merge my work (on the \textit{exploratory} branch) into the \textit{master} branch, before continuing with the next requirement back on the \textit{exploratory} branch.  Before merging I would also ensure all previous tests passed.  This would involve either fixing Luyou, or in some cases modifying the test itself (for example if it relied on log output that was no longer there due to the implementation of the ICMPv6 response).  By merging often and ensuring my router continued passing all tests before every stage I ensured that I was continually making progress, and not shooting myself in the foot by breaking old features, this is similar to \textit{Continuous Integration}.
 
 \chapter{Evaluation}
 

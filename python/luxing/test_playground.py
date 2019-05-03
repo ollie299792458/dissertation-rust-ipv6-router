@@ -42,22 +42,27 @@ def run():
 
     #default.cmdPrint("ifconfig")
 
-    router_process = test.runRouter(router)
+    routing = \
+        "fe80::200:ff:fe00:100@00:00:00:00:03:01,00:00:00:00:01:00\n" + \
+        "fe80::200:ff:fe00:200@00:00:00:00:03:02,00:00:00:00:02:00\n"
 
-    #server_process = left.popen(["./rust/test_server/target/debug/test_server", "h1-eth0"], stdout=sys.stdout, stderr=sys.stdout,
-     #                                  shell=True)
+    router_process = test.runRouter(router, appended=routing)
 
-    #time.sleep(1)
+    left.cmdPrint("ifconfig")
+    right.cmdPrint("ifconfig")
+    router.cmdPrint("ifconfig")
 
-    server_process = left.popen(["./rust/test_client/target/debug/test_client", "h1-eth0", "1217",
-                                 '00:00:00:00:01:00',left_address, router_address], stdout=sys.stdout, stderr=sys.stdout,
-                                shell=True)
 
-    time.sleep(2)
 
-    #client_process = right.popen([sys.executable,"./python/test/testing_tools/test_client.py", '11211', right_address,
-     #                             left_address], stdout=sys.stdout, stderr=sys.stdout, shell=True)
-    #time.sleep(1)
+    time.sleep(1)
+
+    server_process = left.popen([sys.executable, "-m", "python.luxing.my_simple_http_server", left_address, "8000"], stdout=sys.stdout, stderr=sys.stdout,
+                                      shell=True)
+
+    time.sleep(1)
+
+    client_process = right.cmdPrint("curl --interface "+right_address+" -g -6 \"http://["+left_address+"]:8000/\"")
+    time.sleep(1)
 
     info('Example test completed\n')
     server_process.kill()

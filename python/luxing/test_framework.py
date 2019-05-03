@@ -70,6 +70,7 @@ class TestFramework(Mininet):
         #info("Given IPv6 address: " + address + " to node: " + node.name + "\n")
         return address
 
+
     #must be called after __add_ipv6_address
     def __add_default_route(self, node, gateway_address):
         while "tentative" in node.cmd("ip -6 addr"):
@@ -215,7 +216,7 @@ class TestFramework(Mininet):
     def runRouter(self, router, appended="",**args):
         info("Starting router\n")
 
-        file_location = "./rust/router/resource/routing.txt"
+        file_location = "./rust/luyou/resource/routing.txt"
 
         #generate router config file
         f = open(file_location,"w+")
@@ -238,11 +239,10 @@ class TestFramework(Mininet):
                 ))
                 f.write(solicited_multicast_address +"@"+self.__mac_pairs[router.name+host.name]+"\n")
 
-
         f.write(appended)
         f.close()
 
         #start router
-        self.__router_process = router.popen(["./rust/router/target/debug/router", file_location], stdout=sys.stdout, stderr=sys.stdout,
+        self.__router_process = router.popen(["./rust/luyou/target/debug/router", file_location], stdout=sys.stdout, stderr=sys.stdout,
                                              shell=True)
         return self.__router_process

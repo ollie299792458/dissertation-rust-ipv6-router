@@ -85,7 +85,7 @@ fn transform_ethernet_packet(old_packet: EthernetPacket, new_packet: &mut Mutabl
     let mut new_ipv6_packet = MutableIpv6Packet::new(&mut buffer).unwrap();
     new_ipv6_packet.set_payload_length((new_packet.payload().len()-40) as u16);
 
-    //println!("Received ipv6 packet: source: {:?} destination: {:?}", ipv6_packet.get_source(), ipv6_packet.get_destination());
+    //println!("Received ipv6 packet: source: {:?} destination: {:?}", old_ipv6_packet.get_source(), old_ipv6_packet.get_destination());
     let (source, destination) = match transform_ipv6_packet(old_ipv6_packet, &mut new_ipv6_packet, routing) {
         Ok(p) => p,
         Err(e) => return Err(e),
@@ -208,7 +208,7 @@ fn transform_ipv6_packet(old_packet: Ipv6Packet, new_packet: & mut MutableIpv6Pa
         //todo implement hop-by-hop - extension
     }
 
-    let new_hop_limit:u8 = hop_limit - 1_u8;
+    let new_hop_limit:u8 = hop_limit ;//- 1_u8;
     //todo fix this, actually decrementing hop limit works, but results in inexplicable packet drops
     new_packet.set_hop_limit(new_hop_limit);
 
