@@ -609,40 +609,40 @@ flooding
 
 
 
-\section{Issues \& Observations}
 
-Headers
+\section{Issues and Observations}
 
-Rate limit
+Headers - extension headers - 
 
-Destination unreacable
+Looking through for ICMPv6, reassambling fragmented icmpv6
+
+Rate limit - packet in packet out
+
+ICMPv6 erroneous header
+
+Destination unreachable - can only occur in some, but no response
+
+Local and subnet addresses - maybe explain more earlier - More in next
 
 \section{Ambitious Case}
- 
+ping
+Hop limit doesn’t work with ping - same reason as next
 
-Packet in packet out rate limiting
-ICMPv6 destination unreachable cannot occur
+webserver
+difficulties with mininet and linux
 
-Extension headers and ICMPv6
-ICMPv6 erroneous header, fragment reconstruction, destination unreachable
-Local and subnet addresses - maybe explain more earlier
-lack of end to end testing
+\section{Other Metrics}
 code coverage
-difficulties with mininet
-
 Code size 736 lines
 How much of RFC (ex references) - IPv6:; Addr: ; ICMPv6: 14 of 18  - unsure
 Test coverage - 95%
 
-Routing head not supported - extension headers for ICMPv6 packets
-Hop limit doesn’t work with ping
-
-evaluate test bench
-
-ambitious case - doesn't work due to linux and needing to implement more and mininet
+evaluate test bench - ease of use
 
 
 \chapter{Conclusion}
+
+lack of end to end testing
 
 Capitilisation, grammar, spelling, test bench or suite, forwarding or data plane, capital Rust, lower case pnet, ethernet caps?
 https://www.cl.cam.ac.uk/teaching/projects/pinkbook/node18.html
