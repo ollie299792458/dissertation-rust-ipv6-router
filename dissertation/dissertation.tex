@@ -642,20 +642,17 @@ Whilst I managed to implement every basic core requirement set out in my project
 
 \bigskip
 
-All IPv6 extension headers can be ignored by every intermediate node, however they need to be examined by destination nodes.  Luyou is only a destination for ICMPv6  packets, so only needs to examine the headers in this case. Luyou doesn't step through headers, so doesn't support any extension headers being used in the case of ICMPv6 packets (but works find with other packets) Routing headers should be checked, and if the \textit{routing type} is unknown the header should be ignored if the \textiti{segments left} field is 0, and a ICMPv6 \textit{Parameter Problem} \textit{needs} to be sent if it is non-zero, my router does not send the ICMPv6 message, so doesn't comply with the standard. Fragment headers should also be checked, my router doesn't support fragmented ICMPv6 packets.  Neither of these should be a problem, as the only ICMPv6 packets my router supports receiving are Echo Request packets, which rarely have a Routing Options header, and shouldn't need to be fragmented (they are considerably less than one MTU).
+All IPv6 extension headers can be ignored by every intermediate node, however they need to be examined by destination nodes.  Luyou is only a destination for ICMPv6  packets, so only needs to examine the headers in this case. Luyou doesn't step through headers, so doesn't support any extension headers being used in the case of ICMPv6 packets (but works find with other packets) Routing headers should be checked, and if the \textit{routing type} is unknown the header should be ignored if the \textit{segments left} field is 0, and a ICMPv6 \textit{Parameter Problem} \textit{needs} to be sent if it is non-zero, my router does not send the ICMPv6 message, so doesn't comply with the standard. Fragment headers should also be checked, my router doesn't support fragmented ICMPv6 packets.  Neither of these should be a problem, as the only ICMPv6 packets my router supports receiving are Echo Request packets, which rarely have a Routing Options header, and shouldn't need to be fragmented (they are considerably less than one MTU). In addition to not supporting fragmentation in IPv6 packets, Luyou also doesn't support sending Time Exceeded messages with code 1, i.e. Fragment Reassembly Time Exceeded. 
 
 \bigskip
 
-In addition to not supporting fragmentation in IPv6 packets, Luyou also doesn't support sending Time Exceeded messages with code 1, i.e. Fragment Reassembly Time Exceeded. 
+Part of the ICMPv6 requirements is that a router must rate limit the number of ICMPv6 packets it sends out, my router does not do this for two reasons.  It would require a whole different set of test tools to look at rate of packet's sent and perform load testing.  Also, my router exists in a perfect software environment, so performing rate limiting when no other rate limiting exists seems a bit artificial.
 
-Time exceeded
-Destination unreachable - can only occur in some, but no response
+\bigskip
 
-Rate limit - packet in packet out
+The largest part of my core requirements that went unimplemented was IPv6 Multicast and Anycast addressing.
 
-mtu problem
-
-Addressing - local and subnet - multicast and any cast
+Addressing - local and subnet - multicast and any cast - scope and ICMPv6 messages
 
 \bigskip
 
