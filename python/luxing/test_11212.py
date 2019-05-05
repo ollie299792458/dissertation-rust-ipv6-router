@@ -43,12 +43,12 @@ def run():
 
     router_process = test.runRouter(router)
 
-    server_process = right.popen(["./rust/test_server/target/debug/test_server", "h2-eth0"], stdout=sys.stdout, stderr=sys.stdout,
+    server_process = right.popen(["./rust/luxingfu/target/debug/luxingfu", "h2-eth0"], stdout=sys.stdout, stderr=sys.stdout,
                                  shell=True)
 
     time.sleep(1)
 
-    client_process = left.popen(["./rust/test_client/target/debug/test_client", "h1-eth0", "11212",
+    client_process = left.popen(["./rust/luxingke/target/debug/luxingke", "h1-eth0", "11212",
                                  '00:00:00:00:01:00',left_address, right_address], stdout=sys.stdout, stderr=sys.stdout,
                                 shell=True)
 

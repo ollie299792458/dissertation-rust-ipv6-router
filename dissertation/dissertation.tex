@@ -634,21 +634,34 @@ As with almost all projects, my project didn't go completely smoothly. I had man
 
 \bigskip
 
-When I wrote my project proposal I believed Mininet supported IPv6 with minimal or no changes.  I discovered this was not the case when I started implementing Luyou.  In reality Mininet only supports IPv6 insofar as any generic ethernet network supports IPv6, you can send IPv6 packets over the network, but it won't easily setup addressing at each node for you.  Obviously addressing at Luyou's node was handled by Luyou, but each node still needed to be allocated an address. Allocating theses addresses and setting up an IPv6 network took a long time, as it was very difficult to test (I di
+When I wrote my project proposal I believed Mininet supported IPv6 with minimal or no changes.  I discovered this was not the case when I started implementing Luyou.  In reality Mininet only supports IPv6 insofar as any generic ethernet network supports IPv6, you can send IPv6 packets over the network, but it won't easily setup addressing at each node for you.  Obviously addressing at Luyou's node was handled by Luyou, but each node still needed to be allocated an address. Allocating these addresses and setting up an IPv6 network took a long time, as it was very difficult to test.  This was partly because I wasn't particularly knowledgeable in this area, and I was learning a lot about Linux networking and networking tools as I was going along. It was also because all the issues I was facing were as a result of multiple variables interacted (interface configuration, router configuration, python configuration, environment variables configuration), and it was very hard to work out which one was wrong.  However I eventually managed to get it working sufficiently that I could work on Luyou.
 
 \bigskip
 
-Unimplemented core requirements
-Looking through for ICMPv6, reassambling fragmented icmpv6
-ICMPv6 erroneous header
+Whilst I managed to implement every basic core requirement set out in my project proposal. I unfortunately failed to implement some of the advanced core requirements. These include some aspects of ICMPv6, and the Multicast and Anycast requirements. Any other aspect of ICMPv6 not mentioned in the implementation or in the source code that \textit{needs} to be implemented according to the RFC logically cannot occur within my core requirements (for example, it is impossible for most Destination Unreachable messages to be created due to my router having a default route, having no firewall, also the requirement is only a \textit{should}).
+
+\bigskip
+
+All IPv6 extension headers can be ignored by every intermediate node, however they need to be examined by destination nodes.  Luyou is only a destination for ICMPv6  packets, so only needs to examine the headers in this case. Luyou doesn't step through headers, so doesn't support any extension headers being used in the case of ICMPv6 packets (but works find with other packets) Routing headers should be checked, and if the \textit{routing type} is unknown the header should be ignored if the \textiti{segments left} field is 0, and a ICMPv6 \textit{Parameter Problem} \textit{needs} to be sent if it is non-zero, my router does not send the ICMPv6 message, so doesn't comply with the standard. Fragment headers should also be checked, my router doesn't support fragmented ICMPv6 packets.  Neither of these should be a problem, as the only ICMPv6 packets my router supports receiving are Echo Request packets, which rarely have a Routing Options header, and shouldn't need to be fragmented (they are considerably less than one MTU).
+
+\bigskip
+
+In addition to not supporting fragmentation in IPv6 packets, Luyou also doesn't support sending Time Exceeded messages with code 1, i.e. Fragment Reassembly Time Exceeded. 
+
+Time exceeded
 Destination unreachable - can only occur in some, but no response
+
 Rate limit - packet in packet out
+
+mtu problem
+
+Addressing - local and subnet - multicast and any cast
 
 \bigskip
 
 Unimplemented extension requirements
-Headers - extension headers - 
-Addressing - local and subnet - multicast and any cast
+addressing - SLAAC DHCPv6 - effect if implemented
+Headers - extension headers - options headers and more
 
 \bigskip
 

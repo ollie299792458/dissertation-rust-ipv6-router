@@ -18,6 +18,7 @@ use std::sync::mpsc::channel;
 use std::sync::mpsc::Receiver;
 use std::sync::Arc;
 use std::net::Ipv6Addr;
+use std::cmp::max;
 
 /*  This file is part of Software IPv6 Router in Rust.
 
@@ -300,7 +301,7 @@ fn transform_icmp6_packet((icmpv6_type, parameter): (Icmpv6Type, u32), old_ipv6_
 
 fn shuffle_icmpv6_payload(old_packet: &Ipv6Packet, new_packet: &mut MutableIcmpv6Packet, source: Ipv6Addr, routing: Arc<Routing>) {
     let (source_mac, _) = routing.get_route(source);
-    let packet_size = old_packet.get_payload_length() as u32;
+    let packet_size = max(old_packet.get_payload_length() as u32, 1280);
     let mtu = routing.get_mtu(source_mac);
     let buffer = old_packet.packet();
     if (packet_size+8) < mtu { //todo fix this so it deals with min mtu not actual mtu (1280)
