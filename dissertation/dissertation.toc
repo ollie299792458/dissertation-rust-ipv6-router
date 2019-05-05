@@ -19,8 +19,8 @@
 \contentsline {chapter}{\numberline {4}Evaluation}{29}{chapter.4}
 \contentsline {section}{\numberline {4.1}Tests}{29}{section.4.1}
 \contentsline {section}{\numberline {4.2}Issues and Observations}{30}{section.4.2}
-\contentsline {section}{\numberline {4.3}Ambitious Case}{31}{section.4.3}
-\contentsline {section}{\numberline {4.4}Other Metrics}{31}{section.4.4}
+\contentsline {section}{\numberline {4.3}Ambitious Case}{32}{section.4.3}
+\contentsline {section}{\numberline {4.4}Other Metrics}{32}{section.4.4}
 \contentsline {section}{\numberline {4.5}Goals}{32}{section.4.5}
 \contentsline {chapter}{\numberline {5}Conclusion}{33}{chapter.5}
 \contentsline {chapter}{Bibliography}{35}{chapter*.11}

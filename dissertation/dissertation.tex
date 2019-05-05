@@ -650,38 +650,47 @@ Part of the ICMPv6 requirements is that a router must rate limit the number of I
 
 \bigskip
 
-The largest part of my core requirements that went unimplemented was IPv6 Multicast and Anycast addressing.
-
-Addressing - local and subnet - multicast and any cast - scope and ICMPv6 messages
+The largest part of my core requirements that went unimplemented was IPv6 Multicast and Anycast addressing.  This was purely due to time constraints, and due to the requirements being relatively self contained, not relied on by anything, nor affecting anything.  This also included checking the scope of addresses, not allowing link-local addresses to be sent to the gateway (and sending an ICMPv6 message in this case).  Implementing this would be relatively simple, it would require changes to the control plane to validate and support all the different types, and then the addition of methods that can be called by the forwarding plane, triggering packets to be dropped and messages to be sent as appropriate. Multicast and Anycast also wouldn't be too complex under a static routing scheme, with Anycast being the same as Unicast (due to the network being static), and Multicast requiring packets be sent on multiple interfaces.
 
 \bigskip
 
-Unimplemented extension requirements
-addressing - SLAAC DHCPv6 - effect if implemented
-Headers - extension headers - options headers and more
+I didn't implement any of my extension requirements.  I was very interested in implementing SLAAC or DHCPv6, but unfortunately didn't have time.  I also would have implemented extension headers, many of which are sparsely used, but it would have been extremely interesting to see how they work and interact with each other.
 
 \bigskip
 
-Unit testing
-
-\bigskip
-
-Conclusion
+I didn't perform much unit testing as the simplest of my end to end tests passed without too much effort.  This was in part due to Rust and how it prevents C-like behaviour where the wrong memory location is unexpectedly edited.
 
 \section{Ambitious Case}
-ping
-Hop limit doesn’t work with ping - same reason as next
 
-webserver
-difficulties with mininet and linux
+Alongside the tests in Luxing I also attempted testing some more ambitious cases.  First I tried `pinging' between all the nodes, then secondly I tried running a web server on one node and serving a web page.
+
+\bigskip
+
+Mininet did not have an method that pinged all nodes using \textit{ping6} (for IPv6), so I had to implement one myself.  This worked on my flooding network, however when I add the hop limit decrement to Luyou it stopped working. No matter how much I tried I couldn't understand why this was the case, it worked fine with the \verb!-1;! commented out, but didn't work with it in. Only one octet of the header was changed, I checked it was the correct one by outputting the packets before and after at the router.  This octet was not included in the ICMPv6 checksum either (it takes the ICMPv6 packet and the destination and source addresses).  This remains unsolved, but the final version of the router, with hop limit decrement turned off, does allow all nodes to see each other.
+
+\bigskip
+
+Secondly I attempted to run a web server on one node and request a web page from it with another node.  Although I think got the web server to work I couldn't successfully get the web page request to work.  This could be due to any of the following reasons.  The web server didn't bind to the right interface or address.  The client didn't have the right destination or source address (it didn't match the one Luxing wanted it to use).  Or for a reason related to why ping6 fails (see previous paragraph).  Either way, I attempted this quite late in my project, so even though I was disappointed it didn't just work, I wasn't too surprised either.
+
+\bigskip
+
+I believe the failures in both of these cases were down to quirks of networking in Mininet and Linux combined with the slightly shaky implementation of Luxing, and not due to failings in Luyou itself.
 
 \section{Other Metrics}
-code coverage
-Code size 736 lines
-How much of RFC (ex references) - IPv6:; Addr: ; ICMPv6: 14 of 18  - unsure
-Test coverage - 95%
 
-evaluate test bench - ease of use
+I also looked at some other metrics to evaluate my router. 
+
+\bigskip
+
+The total length of Luyou's source code is only 740 lines, which is really a testament to how concise Rust makes error handling and parsing code.
+
+\bigskip
+
+In terms of test coverage, the tests included in Luxingfu cover approximately 95\% of Luyou's code (with the remaining 5\% being error handling code for obscure and unexpected errors).
+
+\bigskip
+
+Finally, the requirements based off of the aspects of the RFCs that \textit{need} to be implemented end up covering around 40\%-70\% of the body of the relevant RFCs.
 
 \section{Goals}
 
@@ -694,7 +703,11 @@ lack of REAL WORLD end to end testing
 
 What would I do better - earlier prototype to check existing tech
 
+time on mininet - but still did most of core
+
 goals
+
+testbench ease of use
 
 tests
 
