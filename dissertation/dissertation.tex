@@ -104,12 +104,13 @@ by running \texttt{find . -name '*.rs/.py/.sh' | xargs wc -l} on the relevant fi
 
 %Questions
 
-SHOULD I INCLUDE SAMPLE CODE IN APPENDICES
+%SHOULD I INCLUDE SAMPLE CODE IN APPENDICES
 
 
 %Todo
 
-REORDER BIBLIOGRAPHY
+%REORDER BIBLIOGRAPHY
+%EXPLAIN SHOULD/MUST/ETC
 
 \section*{Original Aims of the Project}
 
@@ -121,7 +122,7 @@ Despite having initial difficulties setting up my test environment (called Luxin
 
 \section*{Special Difficulties}
 
-Mininet did not support IPv6 as much as I'd hoped, so I spent significantly more time on my test bench than I had planned, this prevented me from implementing all of my core requirements.  Other than this I had no special difficulties.
+Mininet did not support IPv6 as much as I'd hoped, so I spent significantly more time on my test bench than I had planned, this prevented me from implementing all of my core requirements.  In Michaelmas term I took the Cloud Computing Unit of Assessment, the inordinate scale of the coursework combined with the general mismanagement of the course took much of my time that could have gone on my dissertation.  I had no other special difficulties.
 
 \tableofcontents
 \addcontentsline{toc}{chapter}{Table of Contents}
@@ -413,7 +414,7 @@ With requirements and a design of Luyou completed, I needed to plan how I was go
 
 \bigskip
 
-I planned to make Luxing from Mininet and a couple of helper applications (either written in Python or Rust).  Some helper applications would be capable of sending packets with specific properties, and outputting any packets they received. Other helper applications would do more complicated end to end testing, such as running a web server and requesting web pages.  Unfortunately I found Mininet's IPv6 support was far less complete than I had believed in my \hyperref[project_proposal]{Project Proposal}.  I either had to write my own network emulation environment from scratch, or develop some kind of modification or wrapper for Mininet.  I chose to focus on a wrapper that would intercept the Mininet functions I needed to use, and change the necessary things to get Mininet working with IPv6, details of this wrapper can be found in \hyperref[chap::implementation]{Implementation}.
+I planned to make Luxing from Mininet and a couple of helper applications (either written in Python or Rust).  Some helper applications would be capable of sending packets with specific properties, and outputting any packets they received. Other helper applications would do more complicated end to end testing, such as running a web server and requesting web pages.  Unfortunately I found Mininet's IPv6 support was far less complete than I had believed in my \hyperref[project_proposal]{Project Proposal}.  I faced either writing my own network emulation environment from scratch, or developing some kind of modification or wrapper for Mininet.  I chose to focus on a wrapper that would intercept the Mininet functions I needed to use, and change the necessary things to get Mininet working with IPv6, details of this wrapper can be found in \hyperref[chap::implementation]{Implementation}.
 
 \bigskip
 
@@ -428,7 +429,7 @@ This is a brief section on preparation related to professional skills and practi
 
 \bigskip
 
-There could be security exploits in my code, and if anybody would like to adapt my code for use in a real world router I would recommend it is tested extensively.  It would put peoples personal data at risk if this is not done.
+There could be security exploits in my code, and if anybody would like to adapt my code for use in a real world router I would recommend it is tested extensively.  It would put peoples personal data at risk if this is not done, potentially costing a lot in liabilities.
 
 \bigskip
 
@@ -441,7 +442,7 @@ I don't believe there are any ethical issues involved in my project, and there i
 \chapter{Implementation}
 \label{chap::implementation}
 
-Implementing Luyou was an exciting iterative process, with many challenges, but also a real sense of achievement every time I implemented something I had never done before and again when it passed my tests.  There were two main parts to implement, Luyou (the router itself) and Luxing (the test bench).  Both had their own different challenges.  The relationship between the two is explained in more detail in the third section about \hyperref[sec::soft_eng] {Software Engineering} practices used.
+Implementing Luyou was an exciting iterative process, with a real sense of achievement every time I implemented something I had never done before and again when it passed my tests.  There were two main parts to implement, Luyou (the router itself) and Luxing (the test bench).  Both had their own different challenges.  The relationship between the two is explained in more detail in the third section about \hyperref[sec::soft_eng] {Software Engineering} practices used.
 
 
 \addcontentsline{toc}{section}{Repository Overview}
@@ -492,15 +493,15 @@ See \hyperref[fig::repository_overview]{Figure }\ref{fig::repository_overview} f
 \section{Router}
 \label{sec::router}
 
-Luyou was implemented requirement by requirement, as set out in \hyperref[chap::preparation]{Preparation} and \hyperref[appendix::requirements]{Appendix A}.  Version control was performed using git, with backups committed to an \textit{exploratory} branch, with merges into the \textit{master} branch whenever a specific requirement had been completely implemented and tested.
+Luyou was implemented requirement by requirement, as set out in \hyperref[chap::preparation]{Preparation} and \hyperref[appendix::requirements]{Appendix A}.  Version control was performed using git\cite{git}, with backups committed to an \textit{exploratory} branch, with merges into the \textit{master} branch whenever a specific requirement had been completely implemented and tested.
 
 \bigskip
 
-The first thing I did was write a very simple Ethernet repeater, that connected to two interfaces and forwarded all packets as is, on the other interface.  This demonstrated pnet\cite{pnet_rust} worked as I expected, and allowed me to move on, and satisfied the flooding requirement.  The next step was implementing the the shared map of addresses to interfaces to allow forwarding on a specific interface, then a shared routing table to allow working out which interface to forward on, and the separation of layers to allow easily adding IPv6 feautres and ICMPv6 later.
+The first thing I did was write a very simple Ethernet repeater, that connected to two interfaces and forwarded all packets as is, on the other interface.  This demonstrated pnet\cite{pnet_rust} worked as I expected, allowed me to move on, and satisfied the flooding requirement.  The next step was implementing the the shared map of addresses to interfaces to allow forwarding on a specific interface, then a shared routing table to allow working out which interface to forward on, and the separation of layers to allow IPv6 features and later ICMPv6 features to be easily added.
 
 \bigskip
 
-One of the early issues I encountered was implementing a shared map of transmission channels, as described in \hyperref[sec::design]{Design}. There is a method in pnet\cite{pnet_rust} called \verb!channel() -> Channel!, where a \verb!Channel! is a pair of pipes, one receiving and one transmitting.  I planned to give each receiving thread a receiving pipe, and give them all a map from MAC address  (link layer hardware address) to transmitting pipe for the sending address.  Unfortunately the pipe type used by pnet does not support sharing across threads (and this is enforced by the Rust type system). So instead I had to have one additional thread for each transmitting pipe, with another thread safe pipe receiver associated with each transmitting thread, and all the corresponding transmitting thread safe pipes in the map.  This worked without much issues, partly because the map never changed, so was cloned across threads.  See \hyperref[fig::sending]{Figure }\ref{fig::sending} for the code that creates a thread safe channel. Also, the packet representations used by pnet can't be sent over a channel used by multiple threads, as they don't implement the \verb!Clone! trait, however the underlying byte buffer does implement the \verb!Clone! trait. A trait in Rust is similar to an interface in a language like Java.
+One of the early issues I encountered was implementing a shared map of transmission channels, as described in \hyperref[sec::design]{Design}. There is a method in pnet\cite{pnet_rust} called \verb!channel() -> Channel!, where a \verb!Channel! is a pair of pipes, one receiving and one transmitting.  I planned to give each receiving thread a receiving pipe, and give them all a map from MAC address  (link layer hardware address) to transmitting pipe for sending.  Unfortunately the pipe type used by pnet does not support being shared across threads (and this is enforced by the Rust type system). So instead I had to have one additional thread for each transmitting pipe, with another thread safe pipe receiver associated with each transmitting thread, and all the corresponding transmitting thread safe pipes in the map.  This worked without much issue, partly because the map never changed, so could be copyed across threads.  See \hyperref[fig::sending]{Figure }\ref{fig::sending} for the code that creates a thread safe channel. Also, the packet representations used by pnet can't be sent over a channel used by multiple threads, as they don't implement the \verb!Clone! trait, however the underlying byte buffer does implement the \verb!Clone! trait, so the thread safe pipes are of type \verb!u8! not \verb!EthernetPacket!. A trait in Rust is similar to an interface in a language like Java.
 
 \begin{figure}
 \centering
@@ -529,7 +530,7 @@ fn sender_loop(mut sender: Box<DataLinkSender>,
 
 \bigskip
 
-Sharing the routing table between layers was difficult.  I could have just generated a map of IPv6 addresses to MAC addresses on start and shared it analogously to the map of MAC addresses to interfaces. However, my extension goals included implementing DHCPv6 and SLAAC, both of which require the routing table to be editable.  To allow this change without having to edit the forwarding layer too much it made sense to have a separate control thread with write access to the routing table, and give all the reading threads read access.  I did this even though as it stands the control thread sets up the static routing then exits.  Rust enforces safety, so in order to share the structure between threads it needed to be put inside an \verb!Arc! (Atomically Reference Counted)\cite{rust_arc} a thread-safer reference counting pointer.  This doesn't actually support the multiple reader single writer semantics required if I were to implement DHCPv6 or SLAAC, but simply swapping it out for a RwLock\cite{rust_rwlock} would be sufficient.
+Sharing the routing table between layers was difficult.  I could have just generated a map of IPv6 addresses to MAC addresses on start and shared it analogously to the map of MAC addresses to interfaces. However, my extension goals included implementing DHCPv6 and SLAAC, both of which require the routing table to be editable.  To allow this change without having to edit the forwarding layer too much it made sense to have a separate control thread with write access to the routing table, and give all the forwarding threads read access.  I did this even though as it stands the control thread sets up the static routing then exits.  Rust enforces memory safety, so in order to share the structure between threads it needed to be put inside an \verb!Arc! (Atomically Reference Counted)\cite{rust_arc} a thread-safer reference counting pointer (to prevent memory leaks).  This doesn't actually support the multiple reader single writer semantics required if I were to implement DHCPv6 or SLAAC, but simply swapping it out for a RwLock\cite{rust_rwlock} should be sufficient.
 
 \bigskip
 
@@ -537,7 +538,7 @@ The static routing rules themselves were read from a text file (that was created
 
 \bigskip
 
-Separating each layer was quite simple, the Ethernet layer received a packet, called the IPv6 function, which in turn sometimes called the ICMPv6 layer.  My plan was to hand a pair of packets up the layers (the received packet and the new packet to be sent), with each layer stripping off the headers and only handing the rest down to the next layer.  Unfortunately this was complicated by the design of pnet.  A packet in pnet is merely a wrapper for an underlying byte buffer, this is sensible as it reduces copying.  Everything in Rust can only have a maximum of one mutable reference at a time.  A mutable Ethernet packet in pnet refers to the entire of the underlying buffer, both header and payload.  This means that if you have a mutable Ethernet packet it is impossible to create a mutable IPv6 packet from the payload and then edit both of them.  I believe this is a design flaw in pnet, as the solution is to create a fresh buffer for the ipv6 packet and then copy the payload across, resulting in extra copies. Instead creating a packet from a buffer should return a tuple of the header and the payload, allowing them to be owned and mutated separately, with each owning a different \verb!slice! of the underlying buffer. This can be better seen in  \hyperref[fig::mutability]{Figure }\ref{fig::mutability}.
+Separating each layer was initially quite simple, the Ethernet layer received a packet, called the IPv6 function, which in turn sometimes called the ICMPv6 layer.  My plan was to hand a pair of packets up the layers (the received packet and the new packet to be sent), with each layer stripping off the headers and only handing the rest down to the next layer.  Unfortunately this was complicated by the design of pnet.  A packet in pnet is merely a wrapper for an underlying byte buffer, this is sensible as it reduces copying.  Everything in Rust can only have a maximum of one mutable reference at a time.  A mutable Ethernet packet in pnet refers to the entire of the underlying buffer, both header and payload.  This means that if you have a mutable Ethernet packet it is impossible to create a mutable IPv6 packet from the payload and then edit both of them.  I believe this is a design flaw in pnet, as the solution is to create a fresh buffer for the ipv6 packet and then copy the payload across, resulting in extra copies. Instead creating a packet from a buffer should return a tuple of the header and the payload, allowing them to be owned and mutated separately, with each owning a different \verb!slice! of the underlying buffer. This can be better seen in  \hyperref[fig::mutability]{Figure }\ref{fig::mutability}.
 
 \begin{figure}
 \centering
@@ -561,41 +562,41 @@ new_packet.set_ethertype(Ipv6);
 new_packet.set_payload(new_ipv6_packet.packet());
 \end{verbatim}
 \end{varwidth}
-\caption{Excerpt from Ethernet layer, calls IPv6 layer}
+\caption{Excerpt: Ethernet layer calling IPv6 layer}
 \label{fig::mutability}
 \end{figure}
 
 \bigskip
 
-ICMPv6 often requires packets be sent not to their destination, but back to their source address.  Initially this appeared to be a challenge, as it looked like I needed a completely separate path for ICMPv6 packets addressed to Luyou. However due to how I separated the layers this was not necessary. Instead the IPv6 layer passed the old ICMPv6 packet and the old source and destination addresses to the ICMPv6 layer. The ICMPv6 layer then responded with the new ICMPv6 packet, and the new source and destination addresses (for example, with an \verb!Echo Request! ICMPv6 packet, source and destination would be swapped for the \verb!Echo Reply! response).  As long as the IPv6 packet honestly copied these into the new IPv6 packet, and worked out the MAC addresses to pass back to the Ethernet based on the new source and destination addresses, it would work perfectly. This demonstrates how the separation of layers allows new features to leverage existing well tested code effectively, reducing code duplication and increasing reliability.
+ICMPv6 often requires packets be sent not to their destination, but back to their source address.  Initially this appeared to be a challenge, as it looked like I needed a completely separate path for ICMPv6 packets addressed to Luyou. However due to how I separated the layers this was not necessary. Instead the IPv6 layer passed the old ICMPv6 packet and the old source and destination addresses to the ICMPv6 layer. The ICMPv6 layer then responded with the new ICMPv6 packet, and the new source and destination addresses (for example, with an \verb!Echo Request! ICMPv6 packet, source and destination would be swapped for the \verb!Echo Reply! response).  As long as the IPv6 packet honestly copied these into the new IPv6 packet, and worked out the MAC addresses to pass back to the Ethernet layer based on the new source and destination addresses, it would work perfectly. This demonstrates how the separation of layers allows new features to leverage existing well tested code effectively, reducing code duplication and increasing reliability.
 
 \section{Test Bench}
 
-As outlined in \hyperref[chap::preparation]{Preparation} a key part of this project is Luxing. Without Luxing it is impossible to verify that Luyou works as expected.  Below I go into detail about how I implemented Luxing, and issues I had.  Solving these issues involved a lot of trial and error, and I didn't have much experience with networking on Linux.  In the end Luxing took the form of a test framework (\verb!test_framework.py!) which wrapped around Mininet adding rudimentary IPv6 support and the tests themselves which were separate Python files that made use of the framework.
+As outlined in \hyperref[chap::preparation]{Preparation} a key part of this project is Luxing. Without Luxing it is impossible to verify that Luyou works as expected.  Below I go into detail about how I implemented Luxing, and issues I had.  Solving these issues involved a lot of trial and error, and I didn't have much experience with networking on Linux.  In the end Luxing took the form of a test framework (\verb!test_framework.py!) which wrapped around Mininet adding rudimentary IPv6 support and the tests themselves which were separate Python files that made use of the framework. The test framework was not part of my initial plan for the project.
 
 \bigskip
 
-Initially I thought Mininet\cite{mininet} supported IPv6.  However when I set up a network, and tried to use \verb!ping6! between two nodes it didn't work.  This is because Mininet does not support IPv6, and doesn't allocate IPv6 addresses to network nodes.  As described in \hyperref[sec::test_plan]{Test Plan} I chose to write a wrapper for Mininet that added the IPv6 functionality I required.  This wrapper is not as resilient as Mininet itself, it requires operations to be performed in a certain order, that said, it does work, and effectively wraps around Mininet to support IPv6 in a subset of Mininet's use cases.
+Initially I thought Mininet\cite{mininet} supported IPv6.  However when I set up a network, and tried to use \verb!ping6! between two nodes it didn't work.  This is because Mininet does not support IPv6, and doesn't allocate IPv6 addresses to all interfaces of network nodes.  As described in \hyperref[sec::test_plan]{Test Plan} I chose to write a wrapper for Mininet that added the IPv6 functionality I required.  This wrapper is not as resilient as Mininet itself, it requires operations to be performed in a certain order, that said, it does work, and effectively wraps around Mininet to support IPv6 in a subset of Mininet's use cases.
 
 \bigskip
 
-Almost all the tests run on a 4 node network.  Luyou itself is one node, and is in the centre of the network.  The leaves of the network are made up of 2 client nodes, these are the nodes on which the tests are run (using Luxingke and Luxingfu).  The final leaf is the sink, the default route, which represents the rest of the internet, in your home network it would be the phone or fibre line.
+Almost all the tests run on a 4 node network.  Luyou itself is one node, and is in the centre of the network.  The leaves of the network are made up of 2 client nodes, these are the nodes on which the tests are run (using Luxingke and Luxingfu).  The final leaf is the sink, the default route, which represents the rest of the internet, in your home network it would be the phone or fibre line.  Luyou is run simply by starting the compiled rust binary in the network context of the node, and passing the path to the static address configuration file as an argument.
 
 \bigskip
 
-The first issue I faced was allocating IPv6 addresses to nodes. This was achieved by calling \verb!ifconfig [interface-name] inet6 add [address]! every time a node was added. I then stored the node name and IPv6 address in a two way map, to allow me to easily use the addresses later. My wrapper does not support auto allocating IPv6 addresses, you need to specify an address when you create a node, unlike Mininet which allows IPv4 nodes to be created without an address being specified.
+The first issue I faced was allocating IPv6 addresses to nodes. This was achieved by calling \verb!ifconfig [interface-name] inet6 add [address]! every time a node was added. I then stored the node name and IPv6 address in a two way map, to allow me to easily find the addresses later. My wrapper does not support auto allocating IPv6 addresses, you need to specify an address when you create a node, unlike Mininet which allows IPv4 nodes to be created without an address being specified.
 
 \bigskip
 
-The next big issue came when linking the network up. In general it worked fine, as Mininet links nodes together with Veth (Virtual Ethernet) links, which operate at the link layer.  However, in order to make it easy to debug I wanted to be able to choose MAC addresses for each node. As for IPv6 addresses I just had them specified on node creation.  However this didn't work for the router as it had multiple interfaces, so required multiple MAC addresses. This was resolved by requiring a MAC address for all links but the first involving the router.
+The next big issue came when linking the network up. In general it worked fine, as Mininet links nodes together with Veth (Virtual Ethernet) links, which operate at the link layer.  However, in order to make it easy to debug I wanted to be able to choose MAC addresses for each node. As for IPv6 addresses I just had them specified on node creation.  However this didn't work for the router as it had multiple interfaces, so required multiple MAC addresses. This was resolved by requiring a MAC address for all links involving the router.
 
 \bigskip
 
-Another issue was adding the default route to all nodes.  In order for ping to work effectively the default route needed to be set to the router for all nodes.  This is easily achievable using the \verb!ip -6 route add default via [default-address] src [node-address]! command, but this didn't work.  This is because when allocated in Linux IPv6 addresses take a while before shifting to the \verb!UP! state.  Once I had discovered this I added a loop that slept for 100 milliseconds while the output of \verb!ip -6 addr! contained ``\verb!TENTATIVE!'' before trying to update the default route, this fixed the issue.
+Another issue was adding the default route to all nodes.  In order for ping to work effectively the default route needed to be set to the router for all nodes.  This is easily achievable using the \verb!ip -6 route add default via [default-address] src [node-address]! command, but this didn't work.  This is because when allocated in Linux IPv6 addresses take a while before shifting to the ``\verb!UP!'' state.  Once I had discovered this I added a loop that slept for 100 milliseconds while the output of \verb!ip -6 addr! contained ``\verb!TENTATIVE!'' before trying to update the default route, this fixed the issue.
 
 \bigskip
 
-As I was using static routing Luxing needed to generate a routing file for the router describing the network it was in.  This was relatively simple, on router start a text file is created, and filled in according to the format described in \hyperref[sec::router]{Router}.  In order to gather the required information whenever a link was added the relevant IPv6 address and source and destination MAC addresses were stored in a map.  Luyou's and the default gateway's addresses also need to be included in the routing file, which required they not be added as ordinary nodes, and instead be added as their own method. For a long time I couldn't get \verb!ping6! to work via my router, through debugging I discovered this was due to \verb!ping6! making use of \textit{Solicited Multicast Addresses} to send requests and responses. A \textit{Solicited Node Multicast} address is most recognisably used by the \cite{Neighbour Discovery Protocol}\cite{ndp_rfc}. Luxing resolves this by adding the addresses to the static routing file, generating them from the already allocated IPv6 addresses.
+As I was using static routing Luxing needed to generate a routing file for the router describing the network it was in.  This was relatively simple, on router start a text file is created, and filled in according to the format described in \hyperref[sec::router]{Router}.  In order to gather the required information whenever a link was added the relevant IPv6 address and source and destination MAC addresses were stored in a map.  Luyou's and the default gateway's addresses also need to be included in the routing file, which required they not be added as ordinary nodes, and instead be added as their own method. For a long time I couldn't get \verb!ping6! to work via my router, through debugging I discovered this was due to \verb!ping6! making use of \textit{Solicited Multicast Addresses} to send requests and responses. A \textit{Solicited Node Multicast} address is most recognisably used by the \textit{Neighbour Discovery Protocol}\cite{ndp_rfc}. Luxing resolves this by adding the addresses to the static routing file, generating them from the already allocated IPv6 addresses.
 
 \bigskip
 
@@ -608,26 +609,26 @@ Due to both the nature of my project - having to produce a functioning router - 
 
 \bigskip
 
-Overall I began by creating a complete list of requirements, then a complete design, then I implemented my router, and then finally I ran all my tests on it.  This is very similar to the \textit{Waterfall} methodology.  This was appropriate (compared to more flexible software engineering methodologies) as my requirements were well defined by RFCs. This meant that I did not need to explore and refine requirements as my development progressed, as would be necessary if I was reacting to user feedback or my own improved understanding.
+Overall I began by creating a complete list of requirements, then a complete design, then I implemented my router, and then finally I ran all my tests on it.  This is very similar to the \textit{Waterfall} methodology.  This was appropriate (compared to more flexible software engineering methodologies) as my requirements were well defined by RFCs. This meant that I did not need to explore and refine requirements as my development progressed, as would be necessary if I was reacting to user feedback or my own improved understanding of a problem.
 
 \bigskip
 
-However, I didn't really follow the Waterfall methodology as it was not particularly appropriate or sensible to complete the implementation stage as one large chunk.  Instead I completed several prototypes, each implementing a larger set of the requirements than the last:
+However, I didn't strictly follow the Waterfall methodology as it was not particularly appropriate or sensible to complete the implementation stage as one large chunk.  Instead I completed several prototypes, each implementing a larger set of the requirements than the last:
 \begin{itemize}
 \item \textbf{Flooding:} Packets forwarded on all interfaces.
 \item \textbf{Static Routing:} Packets forwarded on specific interfaces.
 \item \textbf{IPv6 validation:} Invalid IPv6 packets dropped and logged.
 \item \textbf{ICMPv6:} Invalid IPv6 packets responded to with ICMPv6 and echo request/reply implemented.
 \end{itemize}
-For each of these stages I first refined the requirements (partly based on the successes and failings of the last stage), and at the end of each iteration I would produce a more complete prototype, this is similar to the \textit{Spiral} software development methodology. Doing all of the implementation in one would have prevented me from effectively testing parts of the router independently from each other, and made the final testing much more complex.
+For each of these stages I first tweaked and refined the requirements (partly based on the successes and failings of the last stage), and at the end of each iteration I would produce a more complete prototype, this is similar to the \textit{Spiral} software development methodology. Doing all of the implementation in one would have prevented me from effectively testing parts of the router independently from each other, making the final testing much more complex.
 
 \bigskip
 
-Every time I implemented an individual requirement I would write tests for that requirement and run them (ensuring they pass) before proceeding.  Once they passed I would merge my work (on the \textit{exploratory} branch) into the \textit{master} branch, before continuing with the next requirement back on the \textit{exploratory} branch.  Before merging I would also ensure all previous tests passed.  This would involve either fixing Luyou, or in some cases modifying the test itself (for example if it relied on log output that was no longer there due to the implementation of the ICMPv6 response).  By merging often and ensuring my router continued passing all tests before every stage I ensured that I was continually making progress, and not shooting myself in the foot by breaking old features, this is similar to \textit{Continuous Integration}.
+Every time I implemented an individual requirement I would write tests for that requirement and run them (ensuring they pass) before proceeding.  Once they passed I would merge my work (on the \textit{exploratory} branch) into the \textit{master} branch, before continuing with the next requirement back on the \textit{exploratory} branch.  Before merging I would also ensure all previous tests passed.  This would involve either fixing Luyou, or in some cases modifying the test itself (for example if it relied on log output that was no longer there due to the implementation of the ICMPv6 response).  By merging often and ensuring my router continued passing all tests before every stage I ensured that I was continually making progress, and not shooting myself in the foot by breaking old stable features, this is similar to \textit{Continuous Integration}.
 
 \chapter{Evaluation}
 
-Evaluating Luyou was relatively complex. Working from the tests I had written and that Luyou passed was relatively easy.  However working out how this fit in relation to the real world was challenging and analysing the success and failure of my project relative to my original goals was even more challenging. Details on how to build and run my project can be found in the \verb!README.md! file in the root directory of my project. 
+Evaluating Luyou was relatively complex. Working from the tests I had written and that Luyou passed was relatively easy.  However working out how this fit in relation to the real world was challenging and analysing the success and failure of my project relative to my original goals was challenging. Details on how to build and run my project can be found in the \verb!README.md! file in the root directory of my project. 
 
 \section{Tests}
 
@@ -635,19 +636,19 @@ As I have already mentioned, I wrote many individual tests on Luxing (my test be
 
 \bigskip
 
-An issue with such tests is whether or not passing the tests means Luyou actually works. Put another way, passing the tests means Luyou does something, but is that 'something' what I wanted Luyou to be.  The tests were defined alongside the requirements, and matched the requirements precisely.  So, as long as the requirements are correct the tests would be.  Additionally the tests themselves were implemented after each feature was implemented (as opposed to concurrently).  This prevents tests being passed by partially hard coding the test itself, and so passing the specific test, but not satisfying the requirement the test is meant to verify. Also the tests deal with many edge cases (see below for more detail). Overall I believe Luyou passing the tests verifies that it passes my requirements.
+An issue with such tests is whether or not passing the tests means Luyou actually works. Put another way, passing the tests means Luyou does something, but is that 'something' what I wanted Luyou to do.  The tests were defined alongside the requirements, and matched the requirements precisely.  So, as long as the requirements are correct the tests would be.  Additionally the tests themselves were implemented after each feature was implemented (as opposed to concurrently).  This prevents tests being passed by partially hard coding the test itself, and so avoiding the case were Luyou passes the specific test, but does not satisfy the requirement the test is meant to verify. Also the tests deal with many edge cases (see below for more detail). Overall I believe Luyou passing the tests verifies that it passes my requirements.
 
 \bigskip
 
-An example of a test would be test 11212 which is testing for the correct hop limit, it involves sending four packets, two with hop limits 1 and 0, and two more with hop limits 10 and 2.  The test passes if the packets with hop limits 10 and 2 are received by the server (Luxingfu) with hop limits of 9 and 1, and if the packets with hop limits 1 and 0 are dropped. A later test, test 1215, deals with a hop limit of 1 or 0 and the destination being the router - where the packet should not be dropped immediately.  In the case that the test passes this has tested the general behaviour, the hop limit should be decremented. But more importantly it has tested the edge case behaviour, the two cases where a packet should be dropped, and the case where the packet shouldn't be dropped (but only just).
+An example of a test would be test 11212 which is testing for the correct hop limit, it involves sending four packets, two with hop limits 1 and 0, and two more with hop limits 10 and 2.  The test passes if the packets with hop limits 10 and 2 are received by the server (Luxingfu) with hop limits of 9 and 1, and if the packets with hop limits 1 and 0 are dropped (A later test, test 1215, deals with a hop limit of 1 or 0 and the destination being the router - where the packet should not be dropped immediately).  In the case that the test passes this has tested the general behaviour, the hop limit should be decremented. But more importantly it has tested the edge case behaviour, the two cases where a packet should be dropped, and the case where the packet shouldn't be dropped (but only just).
 
 \bigskip
 
-Some of the tests defined at the requirements stage will fail on the final build of Luyou, this is because the requirement was obsoleted. Earlier I talked about how ICMPv6 being implemented would obsolete tests that rely on log output for invalid packets (as an ICMPv6 message is sent instead). However in reality I left those log messages in, allowing the original test to be used, to reduce the amount of test reworking that needed to be done.  However, the test for flooding was removed, due to it being superseded by static routing. 
+Some of the tests defined at the requirements stage should fail on the final build of Luyou, this is because the requirement are obsoleted. Earlier I talked about how ICMPv6 being implemented would obsolete tests that rely on log output for invalid packets (as an ICMPv6 message is sent instead). However in reality I left those log messages in, allowing the original test to be used, to reduce the amount of test reworking that needed to be done for the newer ICMPv6 case.  That said, there is an example of an obsolete requirement, the test for flooding was removed, due to it being superseded by static routing. 
 
 \bigskip
 
-To conclude, apart from the issues explained in the next section, my tests verify that I met my goals.  My goal to implement a router that satisfied all my core requirements, and although I didn't implement all of these, for those I did implement the tests effectively verify that I met them.  Overall I implemented 10 tests, with each sending and receiving between 1-5 packets. Most importantly for me however, implementing these tests taught me a lot, and I certainly feel better prepared when I have to do something similar in the future.
+To conclude, apart from the issues explained in the next section, my tests verify that I met my goals.  My goal was to implement a router that satisfied all my core requirements, and although I didn't implement all of these, for those I did implement the tests effectively verify that I met them successfully.  Overall I implemented 10 tests, with each sending and receiving between 1-5 packets. Most importantly for me however, implementing these tests taught me a lot, and I certainly feel better prepared when I have to test something extensively in future.
 
 \section{Issues and Observations}
 
@@ -659,17 +660,17 @@ When I wrote my project proposal I believed Mininet supported IPv6 with minimal 
 
 Allocating these addresses and setting up an IPv6 network took a long time, as it was very difficult to test.  This was partly because I wasn't particularly knowledgeable in this area, and I was learning a lot about Linux networking and networking tools as I was going along. It was also because all the issues I was facing were as a result of multiple variables interacted (interface configuration, router configuration, Python configuration, environment variables configuration), and it was very hard to work out which one was wrong.  
 
-One of my unwritten goals was to create a test bench that was easy to use (this was inspired by witnessing first hand during one of my internships the issues a hard to use test bench can cause), unfortunately time constraints combined with having to write far more testing framework code than I would have liked to made this unattainable.  I separated out framework code from specific test code to avoid code duplication, this does present a good base on which to build a stable easy to use test framework, but Luxing isn't quite there yet. 
+One of my unwritten goals was to create a test bench that was easy to use (this was inspired by witnessing first hand during one of my internships the issues a hard to use test bench can cause), unfortunately time constraints combined with having to write far more testing framework code than I would have liked to made this unattainable.  I did separate out framework code from specific test code to avoid code duplication, presenting a good base on which to build a stable easy to use test framework, but Luxing isn't quite there yet. 
 
 However I eventually managed to get Luxing working sufficiently well that I could work on Luyou. But I did spend around 30\%-60\% of my implementation time on Luxing, considerably more than I would have liked.
 
 \bigskip
 
-Whilst I managed to implement every basic core requirement set out in my project proposal. I unfortunately failed to implement some of the advanced core requirements. These include some aspects of ICMPv6, and the Multicast and Anycast requirements. Any other aspect of ICMPv6 not mentioned in the implementation or in the source code that \textit{needs} to be implemented according to the RFC logically cannot occur within my core requirements (for example, it is impossible for most Destination Unreachable messages to be created due to my router having a default route, having no firewall, also the requirement is only a \textit{should}).
+Whilst I managed to implement every basic core requirement set out in my project proposal. I unfortunately failed to implement some of the advanced core requirements. These include some aspects of ICMPv6, and the Multicast and Anycast requirements. Any other aspect of ICMPv6 not mentioned in the implementation or in the source code that \textit{needs} to be implemented according to the RFC has not been implemented because it logically cannot occur within my core requirements.  For example, it is impossible for most Destination Unreachable messages to be created due to my router having a default route, having no firewall (also the requirement is only a \textit{should}).
 
 \bigskip
 
-All IPv6 extension headers can be ignored by every intermediate node, however they need to be examined by destination nodes.  Luyou is only a destination for ICMPv6  packets, so only needs to examine the headers in this case. Luyou doesn't step through headers, so doesn't support any extension headers being used in the case of ICMPv6 packets (but works find with other packets) Routing headers should be checked, and if the \textit{routing type} is unknown the header should be ignored if the \textit{segments left} field is 0, and a ICMPv6 \textit{Parameter Problem} \textit{needs} to be sent if it is non-zero, my router does not send the ICMPv6 message, so doesn't comply with the standard. Fragment headers should also be checked, my router doesn't support fragmented ICMPv6 packets.  Neither of these should be a problem, as the only ICMPv6 packets my router supports receiving are Echo Request packets, which rarely have a Routing Options header, and shouldn't need to be fragmented (they are considerably less than one MTU). In addition to not supporting fragmentation in IPv6 packets, Luyou also doesn't support sending Time Exceeded messages with code 1, i.e. Fragment Reassembly Time Exceeded. 
+All IPv6 extension headers can be ignored by every intermediate node, however they need to be examined by destination nodes.  Luyou is only a destination node for ICMPv6  packets, so only needs to examine headers in this case. Luyou doesn't step through headers, so doesn't support any extension headers being used in the case of ICMPv6 packets (but works fine with other packets directed at other nodes). Routing headers should be checked, and if the \textit{routing type} is unknown the header should be ignored if the \textit{segments left} field is 0, and a ICMPv6 \textit{Parameter Problem} \textit{needs} to be sent if it is non-zero, my router does not send the ICMPv6 message, so doesn't comply with the standard if the field is non-zero (but does comply in the case that the field is 0). Fragment headers should also be checked, my router doesn't support fragmented ICMPv6 packets.  Neither of these should be a problem, as the only ICMPv6 packets my router supports receiving are Echo Request packets, which rarely have a Routing Options header, and shouldn't need to be fragmented (they are considerably less than one MTU). In addition to not supporting fragmentation in IPv6 packets, Luyou also doesn't support sending Time Exceeded messages with code 1, i.e. Fragment Reassembly Time Exceeded. Although these are not serious issues Luyou does not comply with the standards in these cases.
 
 \bigskip
 
@@ -677,15 +678,15 @@ Part of the ICMPv6 requirements is that a router must rate limit the number of I
 
 \bigskip
 
-The largest part of my core requirements that went unimplemented was IPv6 Multicast and Anycast addressing.  This was purely due to time constraints, and due to the requirements being relatively self contained, not relied on by anything, nor affecting anything.  This also included checking the scope of addresses, not allowing link-local addresses to be sent to the gateway (and sending an ICMPv6 message in this case).  Implementing this would be relatively simple, it would require changes to the control plane to validate and support all the different types, and then the addition of methods that can be called by the forwarding plane, triggering packets to be dropped and messages to be sent as appropriate. Multicast and Anycast also wouldn't be too complex under a static routing scheme, with Anycast being the same as Unicast (due to the network being static), and Multicast requiring packets be sent on multiple interfaces.
+The largest part of my core requirements that went unimplemented was IPv6 Multicast and Anycast addressing.  This was purely due to time constraints, with Multicast and Anycast being selected due to the requirements being relatively self contained, not relied on by anything, nor affecting anything.  This also included checking the scope of addresses, not allowing link-local addresses to be sent to the gateway (and sending an ICMPv6 message in this case).  Implementing this would be relatively simple, it would require changes to the control plane to validate and support all the different types, and then the addition of methods that can be called by the forwarding plane, triggering packets to be dropped and messages to be sent as appropriate. Multicast and Anycast also wouldn't be too complex under a static routing scheme, with Anycast being the same as Unicast (due to the network being static), and Multicast requiring packets be sent on multiple interfaces.
 
 \bigskip
 
-I didn't implement any of my extension requirements.  I was very interested in implementing SLAAC or DHCPv6, but unfortunately didn't have time.  I also would have implemented extension headers, many of which are sparsely used, but it would have been extremely interesting to see how they work and interact with each other.
+I didn't implement any of my extension requirements.  I was very interested in implementing SLAAC or DHCPv6, but unfortunately didn't have time.  I also would have implemented extension headers, many of which are sparsely used, as it would have been extremely interesting to see how they work and interact with each other.
 
 \bigskip
 
-I didn't perform much unit testing as the simplest of my end to end tests passed without too much effort.  This was in part due to Rust and how it prevents C-like behaviour where the wrong memory location is unexpectedly accessed.
+I didn't perform much unit testing as the simplest of my end to end tests passed without too much effort.  This was in part due to Rust and how it prevents C-like behaviour (for example, where the wrong memory location is unexpectedly accessed).
 
 \section{Ambitious Case}
 
@@ -693,15 +694,15 @@ Alongside the tests in Luxing I also attempted testing some more ambitious cases
 
 \bigskip
 
-Mininet did not have an method that pinged all nodes using \textit{ping6} (for IPv6), so I had to implement one myself.  This worked on my flooding network, however when I add the hop limit decrement to Luyou it stopped working. No matter how much I tried I couldn't understand why this was the case, it worked fine with the \verb!-1;! commented out, but didn't work with it in. Only one octet of the header was changed, I checked it was the correct one by outputting the packets before and after at the router.  This octet was not included in the ICMPv6 checksum either (it takes the ICMPv6 packet and the destination and source addresses).  This remains unsolved, but the final version of the router, with hop limit decrement turned off, does allow all nodes to see each other.
+Mininet did not have an method that pinged all nodes using \textit{ping6} (for IPv6), so I had to implement one myself.  This worked on my flooding network, however when I add the hop limit decrement to Luyou it stopped working. No matter how much I tried I couldn't understand why this was the case, it worked fine with the ``\verb!-1;!'' commented out, but didn't work with it in. Only one octet of the header was changed, I checked it was the correct one by outputting the packets before and after the change at Luyou.  This octet was not included in the ICMPv6 checksum either (it takes the ICMPv6 packet and the destination and source IPv6 addresses).  This remains unsolved, but the final version of the router, with hop limit decrement turned off, does allow all nodes to ping each other.
 
 \bigskip
 
-Secondly I attempted to run a web server on one node and request a web page from it with another node.  Although I think got the web server to work I couldn't successfully get the web page request to work.  This could be due to any of the following reasons.  The web server didn't bind to the right interface or address.  The client didn't have the right destination or source address (it didn't match the one Luxing wanted it to use).  Or for a reason related to why ping6 fails (see previous paragraph).  Either way, I attempted this quite late in my project, so even though I was disappointed it didn't just work, I wasn't too surprised either.
+Secondly I attempted to run a web server on one node and request a web page from it with another node.  Although I think got the web server to work I couldn't successfully get the web page request to work.  This could be due to any of the following reasons: The web server didn't bind to the right interface or address;  The client didn't have the right destination or source address (it didn't match the one Luxing wanted it to use), or for some reason related to why ping6 fails (see previous paragraph).  Either way, I attempted this quite late in my project, so even though I was disappointed it didn't   work, I wasn't too surprised either.
 
 \bigskip
 
-I believe the failures in both of these cases were down to quirks of networking in Mininet and Linux combined with the slightly shaky implementation of Luxing, and not due to failings in Luyou itself. However, I failed to understand the root cause of the failure, so it could have been down to a feature of Luyou not working, but I think it is far more likely that if it was due to Luyou it was due to it not implementing a feature, rather than a feature not working as expected.
+I believe the failures in both of these cases were down to quirks of networking in Mininet and Linux combined with the slightly shaky implementation of Luxing, and unlikely due to failings in Luyou itself. However, I failed to understand the root cause of the failure, so it could have been down to a feature of Luyou not working, but I think it is far more likely that if it was down to Luyou it was due to Luyou not implementing a feature, rather than a feature not working as expected.
 
 \section{Other Metrics}
 
@@ -721,16 +722,16 @@ Finally, the requirements based off of the aspects of the RFCs that \textit{need
 
 \section{Goals}
 
-My goal was to have a Software IPv6 Router and test bench running on top of Mininet, with the router complying with all of the core requirements of an IPv6 router, each verified by the test bench.  As described under issues I didn't implement all of core requirements, however I did produce a verifying test for every requirement I did meet.  Overall, although I didn't fully meet my formal goals, I met a good proportion of them despite spending a considerable amount of time being held back by Mininet not working as well as expected.
+My goal was to have a Software IPv6 Router and test bench running on top of Mininet, with the router complying with all of the core requirements of an IPv6 router, each verified by the test bench.  As described under issues I didn't implement all of core requirements, however I did produce a verifying set of tests for every requirement I did meet.  Overall, although I didn't fully meet my formal goals, I met a good proportion of them despite spending a considerable amount of time being held back by Mininet not working as well as expected.
 
 \bigskip
 
-In terms of my personal goals I am extremely happy with everything I gained from this project.  I learnt a significant amount about coding in Rust, and now have a good understanding of several of the abstract constructs Rust makes use of.  I greatly improved my knowledge of Python and of Linux networking, through developing a comprehensive test bench for the first time.
+In terms of my personal goals I am extremely happy with everything I gained from this project.  I learnt a significant amount about coding in Rust, and now have a good understanding of several of the abstract constructs Rust makes use of.  I greatly improved my knowledge of Python and of Linux networking through developing a comprehensive test bench for the first time.
 
 
 \chapter{Conclusion}
 
-As set out in my introduction, my aim was to produce a stable, small, simple \& fast IPv6 router that could act as a practical example of what the IPv6 standard set out in various RFCs means in practice.  Overall I feel I achieved this.
+As set out in my introduction, my aim was to produce a stable, small, simple \& fast IPv6 router that could act as a practical example of what the IPv6 standard set out in various RFCs means in practice.  Overall I feel I achieved this, I met the most important of my core requirements.
 
 \bigskip
 
@@ -778,6 +779,8 @@ That said I am very happy with what I achieved in my project. I have certainly l
 \bibitem{simple_router} Simple Router, implementing an IPv4 router in C on Mininet, \url{https://github.com/mininet/mininet/wiki/Simple-Router}
 
 \bibitem{gpl} GNU General Purpose License, \url{https://www.gnu.org/licenses/quick-guide-gplv3.html}
+
+\bibitem{git} Git, version control system, \url{https://git-scm.com/}
 
 \end{thebibliography}
 
