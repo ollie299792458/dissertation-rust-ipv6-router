@@ -11,6 +11,7 @@
 \usetikzlibrary{shapes,arrows,positioning,chains}
 \usepackage{listings}
 \usepackage{listings-rust/listings-rust}
+\usepackage{tikz-uml}
 \lstdefinestyle{tree}{
     literate=
     {├}{{\smash{\raisebox{-1ex}{\rule{1pt}{\baselineskip}}}\raisebox{0.5ex}{\rule{1ex}{1pt}}}}1 
@@ -252,6 +253,7 @@ The IPv6 Addressing RFC\cite{ipv6_rfc_adr} contains details on how IPv6 addresse
 Finally I spent some time researching and experimenting in Rust\cite{rust}, as it was a new language to me, and I didn't want to make mistakes early on in my implementation that would make things much harder later on.  I discovered a library called pnet\cite{pnet_rust} which implemented low level networking functions and packet abstractions, exactly what I would need.
 
 \section{Analysis}
+\label{sec::analysis}
 
 After finishing my research I needed to do some requirements analysis to work out what exactly Luyou needed to implement, and in what order I should go about implementing them.  I divided up the requirements as recommended into \textit{core} and \textit{extension}, where core contained everything an IPv6 router \textit{needed} to do (according to the RFCs), and extension things I thought I would like it to do as well.  Core was further divided up into \textit{basic} and \textit{advanced}, with basic being everything a router required to provide some form of basic testable functionality, and advanced being everything else that required by the IPv6 RFCs.  This classification defines each requirements implementation priority, and is not related to the type of functionality a requirement provides.
 
@@ -343,7 +345,7 @@ There were also no performance related requirements, as my aim was not to produc
 
 \bigskip
 
-Here are the requirements for Luyou, categorised by implementation stage, starting with the basic core requirements:
+Here are the requirements for Luyou, now in implementation order, starting with the basic core requirements:
 \begin{itemize}
 \item Send packets to the correct hardware interface in accordance with the static routing rules provided (RFC8200 2\cite{ipv6_rfc})
 \item Deal with IPv6 headers in accordance with the standard - Hop limit, etc (RFC8200 3\cite{ipv6_rfc})
@@ -369,7 +371,11 @@ Having completed my analysis and produced a structured list of requirements the 
 
 \bigskip
 
-The first was the separation of the control and forwarding plane. The control plane deals with addressing and the forwarding plane with link layer interfaces and individual packets.  The two communicate through forwarding tables, with static addressing the control plane is read only, but for DHCPv6 or SLAAC the forwarding plane would need to be able to modify the control plane. The forwarding plane is made up of a pair of threads for each interface, one receiving and one transmitting. All of the receiving threads have read access to two objects, one is the routing table produced by the control plane, the other is a map of hardware (MAC) addresses to channels that is given to the receiving thread on creation.  Each MAC address is mapped to a channel that leads to the transmitting thread for that MAC address. See \hyperref[fig::router_design]{Figure }\ref{fig::router_design}.
+The first was the separation of the control and forwarding plane. The control plane deals with addressing and the forwarding plane with link layer interfaces and individual packets.  The two communicate through a forwarding table. For static addressing the control plane can be accessed read-only by the forwarding plane. However for DHCPv6 or SLAAC the forwarding plane would need to be able to trigger modifications of the routing rules in the control plane. 
+
+The forwarding plane contains the \textit{forwarding fabric} which is the collection of paths packets can take between interfaces. The forwarding plane itself is made up of a receiving thread for each interface. All of the receiving threads have access to a map of hardware (MAC) addresses to transmitting channels, this is the forwarding fabric. This map is given to each receiving thread on creation.  Each MAC address is mapped to the transmit channel for that MAC address. 
+
+For an overview see \hyperref[fig::router_design]{Figure }\ref{fig::router_design}.
 
 \begin{figure}
 \centering
@@ -384,8 +390,8 @@ The first was the separation of the control and forwarding plane. The control pl
 \node [below=of control, yshift=-10mm] (center) {};
 \node [little, left=of center] (recv1) {Rx(1)};
 \node [little, below=of recv1] (recv2) {Rx(n)};
-\node [little, right=of center] (trans1) {Tx(1)};
-\node [little, below=of trans1] (trans2) {Tx(n)};
+\node [little, right=of center, rounded corners=0.5cm] (trans1) {Tx(1)};
+\node [little, below=of trans1, rounded corners=0.5cm] (trans2) {Tx(n)};
 
 \path (recv1) -- node [middle] (midl){\ldots} (recv2);
 
@@ -407,8 +413,11 @@ node [near end, transform canvas={xshift=-16mm}] {Routing Table}
 \path  [line] (recv2) -- (trans2);
 \path  [line] (recv2) -- (midr);
 
+\node [left=of midl, text width = 2cm, align=center, transform canvas={xshift=+1cm}] (llbl) {Receiving Threads};
+\node [right=of midr, text width = 2cm, align=center, transform canvas={xshift=-1cm}] (llbl) {Transmitting Channels};
+
 \end{tikzpicture}
-\caption{Router Design}
+\caption{Router Design: Control plane and forwarding frame with forwarding fabric}
 \label{fig::router_design}
 \end{figure}
 
@@ -501,13 +510,12 @@ I don't believe there are any ethical issues involved in my project, and there i
 \chapter{Implementation}
 \label{chap::implementation}
 
-Implementing Luyou was an exciting iterative process, with a real sense of achievement every time I implemented something I had never done before and again when it passed my tests.  There were two main parts to implement, Luyou (the router itself) and Luxing (the test bench).  Both had their own different challenges.  The relationship between the two is explained in more detail in the third section about \hyperref[sec::soft_eng] {Software Engineering} practices used.
-
+Implementing Luyou was an iterative process.  There were two main parts to implement, Luyou (the router itself) and Luxing (the test bench). 
 
 \addcontentsline{toc}{section}{Repository Overview}
 \section*{Repository Overview}
 
-See \hyperref[fig::repository_overview]{Figure }\ref{fig::repository_overview} for the repository overview, the project is made up of a Python application (the test bench - Luxing) and three Rust applications (a test client - Luxingke, a test server - Luxingfu, and the router itself - Luyou). To shorten and explain the tree \verb!*comments*! have been added inline. All of these files were written from scratch except for the few examples commented as \verb!from documentation!. 
+See \hyperref[fig::repository_overview]{Figure }\ref{fig::repository_overview} for the repository overview, the project is made up of a Python application (the main body of the test bench - Luxing) and three Rust applications (a test client - Luxingke, a test server - Luxingfu, and the router itself - Luyou). To shorten and explain the tree \verb!*comments*! have been added inline. All of these files were written from scratch except for the few examples commented as \verb!from documentation!. 
 
 \begin{figure}
 \begin{lstlisting}[style=tree]
@@ -552,7 +560,72 @@ See \hyperref[fig::repository_overview]{Figure }\ref{fig::repository_overview} f
 \section{Router}
 \label{sec::router}
 
-Luyou was implemented requirement by requirement, as set out in \hyperref[chap::preparation]{Preparation} and \hyperref[appendix::requirements]{Appendix A}.  Version control was performed using git\cite{git}, with backups committed to an \textit{exploratory} branch, with merges into the \textit{master} branch whenever a specific requirement had been completely implemented and tested.
+Luyou was implemented by first creating the framework, and then adding features requirement by requirement (as set out at the end of \hyperref[sec::analysis]{Analysis }\ref{sec::analysis}).  Version control was performed using git\cite{git}, with backups committed to an \textit{exploratory} branch and merges into the \textit{master} branch whenever a specific requirement had been completely implemented and tested. 
+
+\bigskip
+
+First I designed the data structures needed.  I needed a routing table, a map from IPv6 addresses to pairs of MAC addresses (each pair is an interface). This would need to be a one to many relationship when I implemented Multicast, but initially a one to one map would be sufficient.  I also needed the forwarding fabric, a map from MAC addresses to transmitting interfaces.
+
+The resulting data structures had the following types:
+\begin{itemize}
+\item Routing Table: \verb!HashMap<Ipv6Addr, (MacAddr, MacAddr)>!, if Multicast implemented: \verb!HashMap<Ipv6Addr, HashSet<(MacAddr, MacAddr)>>!
+\item Forwarding Fabric: \verb!HashMap<MacAddr,Sender<EthernetPacket>>!
+\end{itemize}
+
+Finally I needed a representation for the different types of packets I would be dealing with, pnet includes structures like \verb!MutableEthernetPacket! \& \verb!IPv6Packet! that wrap around a slice of the byte buffer received from the network interface and allow the packet fields to be easily accessed.
+
+Routing struct
+
+\bigskip
+
+Then I implemented the channels
+
+DataLinkSender
+
+annoyance with type - need transmitting threads
+
+annoyance with packet cloning
+
+\bigskip
+
+Then I implemented the functions
+
+pnet packet allocation annoyance
+
+Then I added the features
+
+\begin{figure}
+\begin{lstlisting}[style=tree]
+Main Thread
+├── Control Thread
+└── Forwarding Threads - a pair per interface
+    ├── Receiving Thread
+    └── Transmitting Thread
+
+Control Thread
+└── Routing Table : HashMap<Ipv6Addr, (MacAddr, MacAddr)>
+
+Receiving Thread
+├── Receiving Channel : DataLinkReceiver
+└── Control Thread : Arc<Routing>
+
+Transmitting Thread
+├── Receiving Channel : Receiver<Box[u8]>
+└── Transmitting Channel : DataLinkSender
+\end{lstlisting}
+\caption{Implementation Overview: Data structures and threads}
+\label{fig::implementation_overview}
+\end{figure}
+
+\bigskip
+
+Ethernet repeater
+
+\bigskip
+
+Static routing
+
+
 
 \bigskip
 
@@ -583,7 +656,7 @@ fn sender_loop(mut sender: Box<DataLinkSender>,
 }
 \end{lstlisting}
 \end{varwidth}
-\caption{Code for starting a transmitting thread, returning a thread safe pipe}
+\caption{Code excerpt: Starting a transmitting thread, returning a thread safe pipe}
 \label{fig::sending}
 \end{figure}
 
@@ -623,7 +696,7 @@ new_packet.set_ethertype(Ipv6);
 new_packet.set_payload(new_ipv6_packet.packet());
 \end{lstlisting}
 \end{varwidth}
-\caption{Excerpt: Ethernet layer calling IPv6 layer}
+\caption{Code excerpt: Ethernet layer calling IPv6 layer}
 \label{fig::mutability}
 \end{figure}
 
