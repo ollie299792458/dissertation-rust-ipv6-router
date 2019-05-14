@@ -510,7 +510,7 @@ I don't believe there are any ethical issues involved in my project, and there i
 \chapter{Implementation}
 \label{chap::implementation}
 
-Implementing Luyou was an iterative process.  There were two main parts to implement, Luyou (the router itself) and Luxing (the test bench). 
+Implementing Luyou was an iterative process.  There were two main parts to implement, Luyou (the router itself) and Luxing (the test bench).
 
 \addcontentsline{toc}{section}{Repository Overview}
 \section*{Repository Overview}
@@ -557,86 +557,28 @@ See \hyperref[fig::repository_overview]{Figure }\ref{fig::repository_overview} f
 \label{fig::repository_overview}
 \end{figure}
 
+\pagebreak
+
 \section{Router}
 \label{sec::router}
 
-Luyou was implemented by first creating the framework, and then adding features requirement by requirement (as set out at the end of \hyperref[sec::analysis]{Analysis }\ref{sec::analysis}).  Version control was performed using git\cite{git}, with backups committed to an \textit{exploratory} branch and merges into the \textit{master} branch whenever a specific requirement had been completely implemented and tested. 
-
-\bigskip
-
-First I designed the data structures needed.  I needed a routing table, a map from IPv6 addresses to pairs of MAC addresses (each pair is an interface). This would need to be a one to many relationship when I implemented Multicast, but initially a one to one map would be sufficient.  I also needed the forwarding fabric, a map from MAC addresses to transmitting interfaces.
-
-The resulting data structures had the following types:
-\begin{itemize}
-\item Routing Table: \verb!HashMap<Ipv6Addr, (MacAddr, MacAddr)>!, if Multicast implemented: \verb!HashMap<Ipv6Addr, HashSet<(MacAddr, MacAddr)>>!
-\item Forwarding Fabric: \verb!HashMap<MacAddr, Sender<Box[u8]>>! (was initially: \verb!HashMap<MacAddr, DataLinkSender>!)
-\end{itemize}
-I decided the routing table itself should be private to the control thread, being a member of the \verb!Routing! struct.  The routing struct exposed get route - which either returned from the routing table or the default route(\verb!(Ipv6Addr) -> (MacAddr, MacAddr)!), and get router address (\verb!() -> Ipv6Addr!) methods. In order to share the routing struct between layers I put it inside and \verb!Arc! (Atomically Reference Counter\cite{rust_arc}), a thread safe reference counting reference (this was enforced by Rust's type system, it needs to know when a struct can be deallocated to prevent potential memory leaks).  This doesn't support the multiple reader single writer semantics that would be
-
-Finally I needed a representation for the different types of packets I would be dealing with, pnet\cite{4} includes structures like \verb!MutableEthernetPacket! \& \verb!IPv6Packet! that wrap around a slice of the byte buffer received from the network interface and allow the packet fields to be easily accessed and manipulated with methods like \verb!get_version : () -> u4!.
-
-\bigskip
-
-Then I implemented the threads that make up the forwarding fabric.  A network interface in pnet is made up of a channel - a sender receiver pair (\verb!(DataLinkReceiver, DataLinkSender!). I set up a skeleton receiving thread for each receiver, and created a map of MAC addresses to transmitters (\verb!HashMap<MacAddr, DataLinkSender>!).  I then shared this map with the receiving threads, as the map didn't change it could be safely copied across threads.
-
-Unfortunately the channel type used by pnet does not support being shared across threads (and this is enforced by the Rust type system).  So instead I had to have one additional thread for each transmitting pipe, with another thread safe pipe receiver associated with each transmitting thread, and all the corresponding transmitting thread safe pipes in the map (\verb!HashMap<MacAddr, Sender<EthernetPacket>>!).
-
-Additionally the packet representations used by pnet can't be sent over a channel, as they don't implement the \verb!Clone! trait (a trait is similar to an interface in a language like Java).  However, the underlying byte buffer does implement the \verb!Clone! trait, so the thread safe channels are of type \verb!Box[u8]! (the \verb!Box! is basically a reference) not of type \verb!EthernetPacket!. 
-
-For See \hyperref[fig::sending]{Figure }\ref{fig::sending}
-
-
-
-\begin{figure}
-\centering
-\begin{varwidth}{\linewidth}
-\begin{lstlisting}[language=Rust]
-//SENDER
-pub fn start_sender(tx : Box<DataLinkSender>) 
- 		-> (JoinHandle<()>, Sender<Box<[u8]>>) {
-    let (sender, receiver) = channel();
-    let handle = thread::spawn(move ||sender_loop(tx, receiver));
-    (handle, (sender))
-}
-
-fn sender_loop(mut sender: Box<DataLinkSender>, 
-			   receiver: Receiver<Box<[u8]>>) {
-    loop {
-        let packet = receiver.recv().unwrap();
-        sender.send_to(&packet,None);
-    }
-}
-\end{lstlisting}
-\end{varwidth}
-\caption{Code excerpt: Starting a transmitting thread, returning a thread safe pipe}
-\label{fig::sending}
-\end{figure}
-
-\bigskip
-
-Then I implemented the functions
-
-pnet packet allocation annoyance
-
-mac addr mac addr vs mac addr
-
-\bigskip
-
-see overview, then features
+Luyou was implemented by first creating the framework, and then adding features requirement by requirement (as set out at the end of \hyperref[sec::analysis]{Analysis }\ref{sec::analysis}).  Version control was performed using git\cite{git}, with backups committed to an \textit{exploratory} branch and merges into the \textit{master} branch whenever a specific requirement had been completely implemented and tested.  See \hyperref[fig::implementation_overview]{Figure }\ref{fig::implementation_overview} for an overview of data structures and threads in the implementation.
 
 \begin{figure}
 \begin{lstlisting}[style=tree]
 Main Thread
-├── Control Thread
-└── Forwarding Threads - a pair per interface
-    ├── Receiving Thread
+├── Control Thread - starts
+└── Forwarding Threads - starts a pair per interface
+    ├── Receiving Thread 
     └── Transmitting Thread
 
 Control Thread
 └── Routing struct : Routing
     ├── Routing Table : HashMap<Ipv6Addr, (MacAddr, MacAddr)>
     ├── Get Route : (Ipv6Addr) -> (MacAddr, MacAddr)
-    └── Get Router Address : () -> Ipv6Addr
+    ├── Get Router Address : () -> Ipv6Addr
+    └── Get MTU : MacAddr -> Ipv6Addr
+    
 
 Receiving Thread
 ├── Receiving Channel : DataLinkReceiver
@@ -671,40 +613,88 @@ Result<A,B> - Either Ok(A) or Err(B)
 
 \bigskip
 
-Ethernet repeater
+First I designed the data structures needed.  I needed a routing table, a map from IPv6 addresses to pairs of MAC addresses (each pair is an interface). This would need to be a one to many relationship when I implemented Multicast, but initially a one to one map would be sufficient.  I also needed the forwarding fabric, a map from MAC addresses to transmitting interfaces.
+
+The resulting data structures had the following types:
+\begin{itemize}
+\item Routing Table: \verb!HashMap<Ipv6Addr, (MacAddr, MacAddr)>!, if Multicast implemented: \verb!HashMap<Ipv6Addr, HashSet<(MacAddr, MacAddr)>>!
+\item Forwarding Fabric: \verb!HashMap<MacAddr, Sender<Box[u8]>>! (was initially: \verb!HashMap<MacAddr, DataLinkSender>!)
+\end{itemize}
+I decided the routing table itself should be private to the control thread, being a member of the \verb!Routing! struct.  The routing struct exposed get route - which either returned from the routing table or the default route(\verb!(Ipv6Addr) -> (MacAddr, MacAddr)!), and get router address (\verb!() -> Ipv6Addr!) methods. In order to share the routing struct between layers I put it inside and \verb!Arc! (Atomically Reference Counter\cite{rust_arc}), a thread safe reference counting reference (this was enforced by Rust's type system, it needs to know when a struct can be deallocated to prevent potential memory leaks).  For the forwarding threads to trigger modifications in the routing table (as would be required for DHCPv6 or SLAAC) some form of write lock is required, but swapping the \verb!Arc! for a \verb!RwLock!\cite{rust_rwlock} should be sufficient.
+
+Finally I needed a representation for the different types of packets I would be dealing with, pnet\cite{4} includes structures like \verb!MutableEthernetPacket! \& \verb!IPv6Packet! that wrap around a slice of the byte buffer received from the network interface and allow the packet fields to be easily accessed and manipulated with methods like \verb!get_version : () -> u4!.
 
 \bigskip
 
-Static routing
+Then I implemented the threads that make up the forwarding fabric.  A network interface in pnet is made up of a channel - a sender receiver pair (\verb!(DataLinkReceiver, DataLinkSender!). I set up a skeleton receiving thread for each receiver, and created a map of MAC addresses to transmitters (\verb!HashMap<MacAddr, DataLinkSender>!).  I then shared this map with the receiving threads, as the map didn't change it could be safely copied across threads. See \hyperref[fig::sending]{Figure }\ref{fig::sending} for the code excerpt that creates channels.
 
-\bigskip
+Unfortunately the channel type used by pnet does not support being shared across threads (and this is enforced by the Rust type system).  So instead I had to have one additional thread for each transmitting pipe, with another thread safe pipe receiver associated with each transmitting thread, and all the corresponding transmitting thread safe pipes in the map (\verb!HashMap<MacAddr, Sender<EthernetPacket>>!).
 
-ICMPv6
-
-\bigskip
-
-The first thing I did was write a very simple Ethernet repeater, that connected to two interfaces and forwarded all packets as is, on the other interface.  This demonstrated pnet\cite{pnet_rust} worked as I expected, allowed me to move on, and satisfied the flooding requirement.  The next step was implementing the the shared map of addresses to interfaces to allow forwarding on a specific interface, then a shared routing table to allow working out which interface to forward on, and the separation of layers to allow IPv6 features and later ICMPv6 features to be easily added.
-
-\bigskip
-
-One of the early issues I encountered was implementing a shared map of transmission channels, as described in \hyperref[sec::design]{Design}. There is a method in pnet\cite{pnet_rust} called \verb!channel() -> Channel!, where a \verb!Channel! is a pair of pipes, one receiving and one transmitting.  I planned to give each receiving thread a receiving pipe, and give them all a map from MAC address  (link layer hardware address) to transmitting pipe for sending.  Unfortunately the pipe type used by pnet does not support being shared across threads (and this is enforced by the Rust type system). So instead I had to have one additional thread for each transmitting pipe, with another thread safe pipe receiver associated with each transmitting thread, and all the corresponding transmitting thread safe pipes in the map.  This worked without much issue, partly because the map never changed, so could be copyed across threads.  See \hyperref[fig::sending]{Figure }\ref{fig::sending} for the code that creates a thread safe channel. Also, the packet representations used by pnet can't be sent over a channel used by multiple threads, as they don't implement the \verb!Clone! trait, however the underlying byte buffer does implement the \verb!Clone! trait, so the thread safe pipes are of type \verb!u8! not \verb!EthernetPacket!. A trait in Rust is similar to an interface in a language like Java.
-
-\bigskip
-
-Sharing the routing table between layers was difficult.  I could have just generated a map of IPv6 addresses to MAC addresses on start and shared it analogously to the map of MAC addresses to interfaces. However, my extension goals included implementing DHCPv6 and SLAAC, both of which require the routing table to be editable.  To allow this change without having to edit the forwarding layer too much it made sense to have a separate control thread with write access to the routing table, and give all the forwarding threads read access.  I did this even though as it stands the control thread sets up the static routing then exits.  Rust enforces memory safety, so in order to share the structure between threads it needed to be put inside an \verb!Arc! (Atomically Reference Counted)\cite{rust_arc} a thread-safer reference counting pointer (to prevent memory leaks).  This doesn't actually support the multiple reader single writer semantics required if I were to implement DHCPv6 or SLAAC, but simply swapping it out for a RwLock\cite{rust_rwlock} should be sufficient.
-
-\bigskip
-
-The static routing rules themselves were read from a text file (that was created by Luxing). It had quite a simple format, the first line was the IPv6 address of the default route, the second line that of Luyou.  Every following line was an IPv6 address, then an `\verb!@!' followed by the pair of MAC addresses for the associated interface (separated by a `\verb!,!').  Little validation was performed when parsing this file, as any time spent improving error reporting in the case of invalid files could be better spent working on other parts of Luyou.  In any case implementing DHCPv6 or SLAAC, would render the static addressing obsolete. Rust makes reading text files easy as many structs implement the \verb!Parse! trait.
-
-\bigskip
-
-Separating each layer was initially quite simple, the Ethernet layer received a packet, called the IPv6 function, which in turn sometimes called the ICMPv6 layer.  My plan was to hand a pair of packets up the layers (the received packet and the new packet to be sent), with each layer stripping off the headers and only handing the rest down to the next layer.  Unfortunately this was complicated by the design of pnet.  A packet in pnet is merely a wrapper for an underlying byte buffer, this is sensible as it reduces copying.  Everything in Rust can only have a maximum of one mutable reference at a time.  A mutable Ethernet packet in pnet refers to the entire of the underlying buffer, both header and payload.  This means that if you have a mutable Ethernet packet it is impossible to create a mutable IPv6 packet from the payload and then edit both of them.  I believe this is a design flaw in pnet, as the solution is to create a fresh buffer for the IPv6 packet and then copy the payload across, resulting in extra copies. Instead creating a packet from a buffer should return a tuple of the header and the payload, allowing them to be owned and mutated separately, with each owning a different \verb!slice! of the underlying buffer. This can be better seen in  \hyperref[fig::mutability]{Figure }\ref{fig::mutability}.
+Additionally the packet representations used by pnet can't be sent over a channel, as they don't implement the \verb!Clone! trait (a trait is similar to an interface in a language like Java).  However, the underlying byte buffer does implement the \verb!Clone! trait, so the thread safe channels are of type \verb!Box[u8]! (the \verb!Box! is basically a reference) not of type \verb!EthernetPacket!. 
 
 \begin{figure}
 \centering
 \begin{varwidth}{\linewidth}
 \begin{lstlisting}[language=Rust]
+//SENDER
+pub fn start_sender(tx : Box<DataLinkSender>) 
+ 		-> (JoinHandle<()>, Sender<Box<[u8]>>) {
+    let (sender, receiver) = channel();
+    let handle = thread::spawn(move ||sender_loop(tx, receiver));
+    (handle, (sender))
+}
+
+fn sender_loop(mut sender: Box<DataLinkSender>, 
+			   receiver: Receiver<Box<[u8]>>) {
+    loop {
+        let packet = receiver.recv().unwrap();
+        sender.send_to(&packet,None);
+    }
+}
+\end{lstlisting}
+\end{varwidth}
+\caption{Code excerpt: Starting a transmitting thread, returning a thread safe pipe}
+\label{fig::sending}
+\end{figure}
+
+\bigskip
+
+Next I implemented the layer abstraction explained in \ref{sec::design}\hyperref[sec::design]{-Design}.  This involved implementing three functions, each function takes an incoming packet and returns a new packet.  
+
+The functions don't strictly return the new packet, they mutably borrow it (\verb!&mut!), this is analogous to passing by reference. The functions actual return value is a \verb!Result<A,B>!, in the event of an error the return value is \verb!Err(b)!, and in the case of success is \verb!Ok(a)! (where `a' \& `b' are of type `A' \& `B' respectively). 
+
+Each function potentially calls the `higher layer' function in its body, passing the relevant part of old and new packets it itself received, and using the resultant new packet as the payload for its new packet - see \hyperref[fig::mutability]{Figure }\ref{fig::mutability} for an example. The functions were as follows, each one potentailly calls its successor in its body:
+\begin{itemize}
+\item \textbf{Ethernet:} Passes the routing struct up. Returns the new destination MAC address for look up in the forwarding fabric.
+\begin{verbatim}(EthernetPacket, &mut MutableEthernetPacket, Arc<Routing>)
+        -> (Result<(MacAddr), String>)
+\end{verbatim}
+\item \textbf{IPv6:} Passes the routing struct up. Returns the pair of MAC addresses (new source and new destination), one for the new Ethernet packet, and the other for look up in the forwarding fabric.
+\begin{verbatim}(IPv6Packet, &mut MutableIPv6Packet, Arc<Routing>)
+        -> (Result<(MacAddr, MacAddr), String>)
+\end{verbatim}
+\item \textbf{ICMPv6:} Receives the IPv6Packet as it needs the source and destination address (they form the ICMPv6 pseudo-header), also receives the type of ICMPv6 message to generate (with an argument - usually the ICMPv6 code). Returns a pair of  IPv6 addresses and MAC addresses (both new source and new destination) to be used in the new IPv6 packet and by the IPv6 function.
+\begin{verbatim}((Icmpv6Type, u32), IPv6Packet, &mut MutableIcmpv6Packet, Arc<Routing>) 
+         -> (Result<(MacAddr, MacAddr), (Ipv6Addr, Ipv6Addr)>)
+\end{verbatim}
+\end{itemize}
+Initially I planned to allocate a mutable buffer in the main loop of the receiver thread, then pass this as a \verb!MutableEtherentPacket! to the Ethernet function, the Ethernet Function would then pass the payload of the \verb!MutableEthernetPacket! as a \verb!MutableIpv6Packet! to the IPv6 function. Unfortunately this was complicated by the design of pnet.  
+
+A packet in pnet is merely a wrapper for an underlying byte buffer, this is sensible as it reduces copying.  Everything in Rust can only have a maximum of one mutable reference at a time.  A mutable Ethernet packet in pnet refers to the entire of the underlying buffer, both header and payload.  This means that if you have a mutable Ethernet packet it is impossible to create a mutable IPv6 packet from the payload and then edit both of them.  The solution is to create a fresh buffer for the IPv6 packet and then copy the payload across. This can be better seen in  \hyperref[fig::mutability]{Figure }\ref{fig::mutability}.
+
+I don't agree with this design choice in pnet, it results in extra copies. This could have been avoided if creating a packet from a buffer in pnet returned a tuple of the header and the payload, allowing them to be owned and mutated separately, with each owning a different \verb!slice! of the underlying buffer. 
+
+The ICMPv6 method returns a pair of MAC addresses because it requires to MAC address to determine the MTU of a outgoing link (which it uses to limit the size of \textit{EchoReply} messages).  If the MAC address of the destination IP changes between the MTU check in the ICMPv6 function and the get route call in the IPv6 function the packet could be unnecessarily trimmed, or worse, be sent down a link that it doesn't fit down. This is partially resolved by performing the call to get route in the ICMPv6 method, but the atomic calls or checks required have not been implemented (due to static addressing such an inconsistency cannot occur).
+
+\begin{figure}
+\centering
+\begin{varwidth}{\linewidth}
+\begin{lstlisting}[language=Rust]
+let old_ipv6_packet = match Ipv6Packet::new(
+                            old_packet.payload()) {
+        Some(p) => p,
+        None => return Err(format!("Invalid Packet")),
+};
 let mut buffer = vec![0;new_packet.payload().len()];
 let mut new_ipv6_packet = 
     MutableIpv6Packet::new(&mut buffer).unwrap();
@@ -731,7 +721,41 @@ new_packet.set_payload(new_ipv6_packet.packet());
 
 \bigskip
 
-ICMPv6 often requires packets be sent not to their destination, but back to their source address.  Initially this appeared to be a challenge, as it looked like I needed a completely separate path for ICMPv6 packets addressed to Luyou. However due to how I separated the layers this was not necessary. Instead the IPv6 layer passed the old ICMPv6 packet and the old source and destination addresses to the ICMPv6 layer. The ICMPv6 layer then responded with the new ICMPv6 packet, and the new source and destination addresses (for example, with an \verb!Echo Request! ICMPv6 packet, source and destination would be swapped for the \verb!Echo Reply! response).  As long as the IPv6 packet honestly copied these into the new IPv6 packet, and worked out the MAC addresses to pass back to the Ethernet layer based on the new source and destination addresses, it would work perfectly. This demonstrates how the separation of layers allows new features to leverage existing well tested code effectively, reducing code duplication and increasing reliability.
+After implementing the initial skeleton of the above framework I began implementing the requirements one by one.  The first was writing an Ethernet repeater, this demonstrated that pnet\cite{pnet} and my framework worked as expected. I then implemented each requirement in turn, modifying the skeleton if necessary. 
+
+\bigskip
+
+The static routing rules were read from a text file that was created by Luxing. See \hyperref[fig::config_file]{Figure }\ref{fig::config_file} for details of the file format.
+
+\begin{figure}
+\begin{varwidth}{\linewidth}
+\begin{verbatim}
+DEFINITION:
+<Default Route IPv6 Address>
+<Router IPv6 Address>
+[Routing Rules]
+...
+
+Routing Rule:
+<IPv6 Address>@<Source MAC Address>,<Destination MAC Address>
+OR
+mtu<MTU>@<Destination MAC Address>
+
+EXAMPLE:
+fc00::
+fc00::3
+fc00::@00:00:00:00:03:00,ff:00:00:00:00:00
+fc00::1@00:00:00:00:03:01,00:00:00:00:01:00
+fc00::2@00:00:00:00:03:02,00:00:00:00:02:00
+ff02::1:ff00:0@00:00:00:00:03:00,ff:00:00:00:00:00
+ff02::1:ff00:1@00:00:00:00:03:01,00:00:00:00:01:00
+ff02::1:ff00:2@00:00:00:00:03:02,00:00:00:00:02:00
+mtu1300@00:00:00:00:02:00
+\end{verbatim}
+\end{varwidth}
+\caption{Static addressing configuration file format}
+\label{fig::config_file}
+\end{figure}
 
 \section{Luxing (Test Bench)}
 

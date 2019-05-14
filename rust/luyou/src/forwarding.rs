@@ -273,7 +273,7 @@ fn transform_icmp6_packet((icmpv6_type, parameter): (Icmpv6Type, u32), old_ipv6_
             let payload = &mut new_packet.payload_mut(); //set 4 octets to mtu
             let (mac_source, mac_destination) = routing.get_route(new_destination);
             let (old_mac_source,_) = routing.get_route(destination);
-            let mtu = routing.get_mtu(old_mac_source);
+            let mtu = routing.get_mtu(old_mac_source); //todo compare these and make them atomic somehow
             payload[0] = (mtu / (1 << 24)) as u8;
             payload[1] = (mtu / (1 << 16)) as u8;
             payload[2] = (mtu / (1 << 8)) as u8;
