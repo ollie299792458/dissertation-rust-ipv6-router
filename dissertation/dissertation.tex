@@ -104,15 +104,7 @@ by copying the relevant part of the dissertation into \url{https://wordcounter.n
 by running \texttt{find . -name '*.rs/.py/.sh' | xargs wc -l} on the relevant files, breakdown: 995 Python, 575 router Rust, 379 other Rust, 49 Bash shell}
 \stepcounter{footnote}
 
-%Questions
 
-%SHOULD I INCLUDE SAMPLE CODE IN APPENDICES
-
-
-%Todo
-
-%REORDER BIBLIOGRAPHY
-%EXPLAIN SHOULD/MUST/ETC
 
 \section*{Original Aims of the Project}
 
@@ -562,7 +554,7 @@ See \hyperref[fig::repository_overview]{Figure }\ref{fig::repository_overview} f
 \section{Router}
 \label{sec::router}
 
-Luyou was implemented by first creating the framework, and then adding features requirement by requirement (as set out at the end of \hyperref[sec::analysis]{Analysis }\ref{sec::analysis}).  Version control was performed using git\cite{git}, with backups committed to an \textit{exploratory} branch and merges into the \textit{master} branch whenever a specific requirement had been completely implemented and tested.  See \hyperref[fig::implementation_overview]{Figure }\ref{fig::implementation_overview} for an overview of data structures and threads in the implementation.
+Luyou was implemented by creating the skeleton framework as set out in \ref{sec::design}\hyperref[sec::design]{-Design}.  Then a series of prototypes were completed, each adding more functionality that the last (this is explained in more detail in \ref{sec::soft_eng}\hyperref[sec::soft_eng]{-Analysis}).  Version control was performed using git\cite{git}, with backups committed to an \textit{exploratory} branch and merges into the \textit{master} branch whenever a specific requirement had been completely implemented and tested.  See \hyperref[fig::implementation_overview]{Figure }\ref{fig::implementation_overview} for an overview of data structures and threads in the implementation.
 
 \begin{figure}
 \begin{lstlisting}[style=tree]
@@ -610,6 +602,18 @@ Result<A,B> - Either Ok(A) or Err(B)
 \caption{Implementation Overview: Data structures and threads}
 \label{fig::implementation_overview}
 \end{figure}
+
+
+\bigskip
+
+I planned to implement the following prototypes (these cover my basic core requirements and ICMPv6):
+\begin{itemize}
+\item \textbf{Flooding:} Packets forwarded on all interfaces.
+\item \textbf{Static Routing:} Packets forwarded on specific interfaces.
+\item \textbf{IPv6 validation:} Invalid IPv6 packets dropped and logged.
+\item \textbf{ICMPv6:} Invalid IPv6 packets responded to with ICMPv6 and echo request/reply implemented.
+\end{itemize}
+Below I describe the implementation of each individual aspect of the router: data structures, threads \& channels, and layer separation.  Each aspect is followed by related difficulties, it is relatively self explanatory at which prototype each difficulty was encountered.
 
 \bigskip
 
@@ -721,11 +725,7 @@ new_packet.set_payload(new_ipv6_packet.packet());
 
 \bigskip
 
-After implementing the initial skeleton of the above framework I began implementing the requirements one by one.  The first was writing an Ethernet repeater, this demonstrated that pnet\cite{pnet} and my framework worked as expected. I then implemented each requirement in turn, modifying the skeleton if necessary. 
-
-\bigskip
-
-The static routing rules were read from a text file that was created by Luxing. See \hyperref[fig::config_file]{Figure }\ref{fig::config_file} for details of the file format.
+The static routing rules were read from a text file that was created by Luxing. These consisted of the default route, the router address, then a list of routing rules.  Each routing rule either related an IPv6 address to an interface or an MTU with a MAC address. See \hyperref[fig::config_file]{Figure }\ref{fig::config_file} for details and an example of the file format. 
 
 \begin{figure}
 \begin{varwidth}{\linewidth}
@@ -757,37 +757,80 @@ mtu1300@00:00:00:00:02:00
 \label{fig::config_file}
 \end{figure}
 
-\section{Luxing (Test Bench)}
+\section{Test Bench}
 
-As outlined in \hyperref[chap::preparation]{Preparation} a key part of this project is Luxing. Without Luxing it is impossible to verify that Luyou works as expected.  Below I go into detail about how I implemented Luxing, and issues I had.  Solving these issues involved a lot of trial and error, and I didn't have much experience with networking on Linux.  In the end Luxing took the form of a test framework (\verb!test_framework.py!) which wrapped around Mininet adding rudimentary IPv6 support and the tests themselves which were separate Python files that made use of the framework. The test framework was not part of my initial plan for the project.
-
-\bigskip
-
-Initially I thought Mininet\cite{mininet} supported IPv6.  However when I set up a network, and tried to use \verb!ping6! between two nodes it didn't work.  This is because Mininet does not support IPv6, and doesn't allocate IPv6 addresses to all interfaces of network nodes.  As described in \hyperref[sec::test_plan]{Test Plan} I chose to write a wrapper for Mininet that added the IPv6 functionality I required.  This wrapper is not as resilient as Mininet itself, it requires operations to be performed in a certain order, that said, it does work, and effectively wraps around Mininet to support IPv6 in a subset of Mininet's use cases.
+As outlined in \hyperref[chap::preparation]{Preparation} a key part of this project is the test bench (Luxing). Without Luxing it is impossible to verify that Luyou works as expected.  Below I go into detail about how I implemented Luxing, and issues I had.  Solving these issues involved a lot of trial and error, and I didn't have much experience with networking on Linux.  In the end Luxing took the form of a test framework (\verb!test_framework.py!) which wrapped around Mininet adding rudimentary IPv6 support and the tests themselves which were separate Python files that made use of the framework. The test framework was not part of my initial plan for the project.
 
 \bigskip
 
-Almost all the tests run on a 4 node network.  Luyou itself is one node, and is in the centre of the network.  The leaves of the network are made up of 2 client nodes, these are the nodes on which the tests are run (using Luxingke and Luxingfu).  The final leaf is the sink, the default route, which represents the rest of the internet, in your home network it would be the phone or fibre line.  Luyou is run simply by starting the compiled rust binary in the network context of the node, and passing the path to the static address configuration file as an argument.
+Initially I thought Mininet\cite{mininet} supported IPv6.  However when I set up a network, and tried to use \verb!ping6! between two nodes it didn't work.  This is because Mininet does not support IPv6, and doesn't allocate IPv6 addresses to all interfaces of network nodes (even though this example\cite{tw_mininet} had led me to believe it did when writing my project proposal).  As described in \hyperref[sec::test_plan]{Test Plan} I chose to write a wrapper for Mininet that added the IPv6 functionality I required.  
 
 \bigskip
 
-The first issue I faced was allocating IPv6 addresses to nodes. This was achieved by calling \verb!ifconfig [interface-name] inet6 add [address]! every time a node was added. I then stored the node name and IPv6 address in a two way map, to allow me to easily find the addresses later. My wrapper does not support auto allocating IPv6 addresses, you need to specify an address when you create a node, unlike Mininet which allows IPv4 nodes to be created without an address being specified.
+The wrapper is a python class (\verb!test_framework.py!) which extends the main \verb!Mininet! python class (the class used to initialise and manipulate networks in Mininet). It overrides some public methods, such as \verb!addNode! (used to add a node to the network), and adds some new public methods like \verb!addRouter!.  It also includes several private methods that implement functionality like allocating IPv6 addresses and adding default routes.  
 
 \bigskip
 
-The next big issue came when linking the network up. In general it worked fine, as Mininet links nodes together with Veth (Virtual Ethernet) links, which operate at the link layer.  However, in order to make it easy to debug I wanted to be able to choose MAC addresses for each node. As for IPv6 addresses I just had them specified on node creation.  However this didn't work for the router as it had multiple interfaces, so required multiple MAC addresses. This was resolved by requiring a MAC address for all links involving the router.
+The wrapper aims to support the necessary functionality to run tests, it does not aim to be a complete IPv6 rewrite of Mininet. Also, not as much design went into the wrapper as went into Luyou. This results in a wrapper is not as resilient as Mininet itself, it requires operations to be performed in a certain order.  That said, it does work, and effectively wraps around Mininet to support IPv6 in a subset of Mininet's use cases.
 
 \bigskip
 
-Another issue was adding the default route to all nodes.  In order for ping to work effectively the default route needed to be set to the router for all nodes.  This is easily achievable using the \verb!ip -6 route add default via [default-address] src [node-address]! command, but this didn't work.  This is because when allocated in Linux IPv6 addresses take a while before shifting to the ``\verb!UP!'' state.  Once I had discovered this I added a loop that slept for 100 milliseconds while the output of \verb!ip -6 addr! contained ``\verb!TENTATIVE!'' before trying to update the default route, this fixed the issue.
+Almost all the tests run on a 4 node network, see \hyperref[fig::test_network]{Figure }\ref{fig::test_network}.  Luyou itself is one node, and is in the centre of the network.  The leaves of the network are made up of 2 client nodes, these are the nodes on which the tests are run (using Luxingke and Luxingfu).  The final leaf is the sink, the default route, which represents the rest of the internet.  Running tests on this single simple network topology prevents scaling and interactions with other routers from being tested. However, with static addressing such tests aren't particularly interesting, as interactions with other routers are predefined in the static routing file, with the other router appearing to Luyou as a node with more addresses.
+
+
+\begin{figure}
+\centering
+\begin{tikzpicture}
+
+\tikzstyle{block} = [rectangle, draw, 
+    text width=5em, text centered, rounded corners, minimum height=2cm,node distance = 2.5cm]
+\tikzstyle{invisible} = [rectangle,minimum height=1cm]
+\tikzstyle{line} = [draw, -latex']
+
+\node [block] (default) {Default Route};
+\node [block, below=of default] (router) {Router};
+\node [block, left=of router] (left) {Left Node};
+\node [block, right=of router] (right) {Right Node};
+
+\path [line] (router) -- (default);
+\path [line] (left) -- (router);
+\path [line] (right) -- (router);
+\end{tikzpicture}
+\caption{Test Network Topology: arrows in directions of default router}
+\label{fig::test_network}
+\end{figure}
 
 \bigskip
 
-As I was using static routing Luxing needed to generate a routing file for the router describing the network it was in.  This was relatively simple, on router start a text file is created, and filled in according to the format described in \hyperref[sec::router]{Router}.  In order to gather the required information whenever a link was added the relevant IPv6 address and source and destination MAC addresses were stored in a map.  Luyou's and the default gateway's addresses also need to be included in the routing file, which required they not be added as ordinary nodes, and instead be added as their own method. For a long time I couldn't get \verb!ping6! to work via my router, through debugging I discovered this was due to \verb!ping6! making use of \textit{Solicited Multicast Addresses} to send requests and responses. A \textit{Solicited Node Multicast} address is most recognisably used by the \textit{Neighbour Discovery Protocol}\cite{ndp_rfc}. Luxing resolves this by adding the addresses to the static routing file, generating them from the already allocated IPv6 addresses.
+Luxing is run through a simple shell script - \verb!test.sh [Test/Requirement number]! - which selects the correct Python script to run based on the requirement number. Each test python script (e.g. \verb!test_example.py!) creates an instance of the wrapper, sets up the network topology, tells the wrapper to start Luyou, then runs the specified test. The wrapper starts Luyou by starting the compiled Rust binary in the network context of the node, and passing the path to the static address configuration file as an argument (Luxing does this by running \verb!luyou static_routing.txt!).
+
+\bigskip
+
+The first issue I faced was getting Luxing to allocate IPv6 addresses to nodes. This was eventually resolved by having creating the \verb!__add_ipv6_address! method which runs \verb!ifconfig [interface-name] inet6 add [address]! and then calling it every time a node was added. Luxing then stores the node name and IPv6 address in a two way map, allowing it to easily find the addresses later. Luxing does not support auto allocating IPv6 addresses - you need to specify an address when you create a node - unlike Mininet which allows IPv4 nodes to be created without an address being specified.
+
+\bigskip
+
+Mininet links nodes with \textit{Veth} (Virtual Ethernet) links. However, this does not allow you to choose MAC addresses for each node, which is necessary to construct the static routing configuration file. As with IPv6 addresses I just specified MAC addresses on node creation.
+
+\bigskip
+
+Another issue was adding the default route to all nodes, I discovered this when implementing the flooding Ethernet repeater version of Luyou.  I'm unsure exactly why, but, without the default route set to point to the router \verb!ping6! would not work. This is easily achievable using the \verb!ip -6 route add default via [default-address] src [node-address]! command, but this seem didn't work.  This is because when allocated in Linux IPv6 addresses take a while before shifting to the ``\verb!UP!'' state.  Once I had discovered this I added a loop that slept for 100 milliseconds while the output of \verb!ip -6 addr! contained ``\verb!TENTATIVE!'' before trying to update the default route, this fixed the issue.  The default routes can also be seen in \hyperref[fig::test_network]{Figure }\ref{fig::test_network}.
+
+\bigskip
+
+As I was using static routing Luxing needed to generate a routing file for the router describing the network it was in.  This was relatively simple, on router start a text file is created, and filled in according to the format described in \ref{sec::router}\hyperref[sec::router]{-Router}.  In order to gather the required information whenever a link was added the relevant IPv6 address and source and destination MAC addresses were stored in a map (generated by intercepting calls to \verb!addLink!).  Luyou's address and the default gateway's address also need to be included in the routing file, which was gathered when they were added using \verb!addRouter! and \verb!addDefault!.
+
+\bigskip
+
+After implementing static addressing I couldn't get \verb!ping6! to work via my router, through debugging I discovered this was due to \verb!ping6! making use of \textit{Solicited Multicast Addresses} to send requests and responses. A \textit{Solicited Node Multicast} address is most recognisably used by the \textit{Neighbour Discovery Protocol}\cite{ndp_rfc}. Luxing resolves this by adding the addresses to the static routing file, generating them from the already allocated IPv6 addresses.
 
 \bigskip
 
 I also wrote a small test client and server in Rust (called Luxingke and Luxingfu).  Both take an argument that determines which test is being run, the client then produces packets and optionally waits for responses, with the server waiting for packets and optionally producing responses.  By using Rust rather than Python for this I could use pnet, which I understood relatively well by this point, avoiding having to learn a new low level networking library.
+
+\bigskip
+
+The hardest part of implementing Luxing was working out which linux commands and in which configurations was needed to get Mininet working with IPv6.  For example, Luxing barely work at all until IPv6 addresses were custom allocated to every interface and all the default routes set.  I had no way of knowing in advance that the combination of these two commands was what was required.  So even though almost all of the above fixes seem obvious in hindsight, they took a lot of careful trial and error to discover.
 
 \section{Software Engineering}
 \label{sec::soft_eng}
@@ -800,14 +843,7 @@ Overall I began by creating a complete list of requirements, then a complete des
 
 \bigskip
 
-However, I didn't strictly follow the Waterfall methodology as it was not particularly appropriate or sensible to complete the implementation stage as one large chunk.  Instead I completed several prototypes, each implementing a larger set of the requirements than the last:
-\begin{itemize}
-\item \textbf{Flooding:} Packets forwarded on all interfaces.
-\item \textbf{Static Routing:} Packets forwarded on specific interfaces.
-\item \textbf{IPv6 validation:} Invalid IPv6 packets dropped and logged.
-\item \textbf{ICMPv6:} Invalid IPv6 packets responded to with ICMPv6 and echo request/reply implemented.
-\end{itemize}
-For each of these stages I first tweaked and refined the requirements (partly based on the successes and failings of the last stage), and at the end of each iteration I would produce a more complete prototype, this is similar to the \textit{Spiral} software development methodology. Doing all of the implementation in one would have prevented me from effectively testing parts of the router independently from each other, making the final testing much more complex.
+However, I didn't strictly follow the Waterfall methodology as it was not particularly appropriate or sensible to complete the implementation stage as one large chunk.  Instead I completed several prototypes, each implementing a larger set of the requirements than the last (Flooding, Static Routing, IPv6 Validation, \& ICMPv6 - see \ref{sec::router}\hyperref[sec::router]{-Router} for more details). For each of these stages I first tweaked and refined the requirements (partly based on the successes and failings of the last stage), and at the end of each iteration I would produce a more complete prototype, this is similar to the \textit{Spiral} software development methodology. Doing all of the implementation in one would have prevented me from effectively testing parts of the router independently from each other, making the final testing much more complex.
 
 \bigskip
 
@@ -970,6 +1006,8 @@ That said I am very happy with what I achieved in my project. I have certainly l
 \bibitem{git} Git, version control system, \url{https://git-scm.com/}
 
 \bibitem{open_source_router} DD-WRT vs. Tomato vs. OpenWrt: Which Router Firmware Is the Best?, \url{https://www.maketecheasier.com/dd-wrt-vs-tomato-vs-openwrt-router-firmware/}
+
+\bibitem{tw_mininet} IPv6 working in Mininet, \url{http://csie.nqu.edu.tw/smallko/sdn/ipv6_test.htm}
 
 \end{thebibliography}
 
