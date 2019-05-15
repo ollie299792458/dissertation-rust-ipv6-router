@@ -792,7 +792,7 @@ mtu1300@00:00:00:00:02:00
 
 \section{Test Bench}
 
-As outlined in chapter \ref{chap::preparation}\hyperref[chap::preparation]{ - Preparation} a key part of this project is the test bench (Luxing). Without Luxing it is impossible to verify that Luyou works as expected.  Below I go into detail about how I implemented Luxing, and issues I had.  Solving these issues involved a lot of trial and error, and I didn't have much experience with networking on Linux.  In the end Luxing took the form of a test framework (\verb!test_framework.py!) which wrapped around Mininet adding rudimentary IPv6 support and the tests themselves which were separate Python files that made use of the framework. The test framework was not part of my initial plan for the project.
+As outlined in chapter \ref{chap::preparation}\hyperref[chap::preparation]{ - Preparation} a key part of this project is the test bench (Luxing). Without Luxing it is impossible to verify that Luyou works as expected.  Below I go into detail about how I implemented Luxing, and issues I had.  Solving these issues involved a lot of trial and error, and I didn't have much experience with networking on Linux.  In the end Luxing took the form of a test framework (\verb!test_framework.py!) which wrapped around Mininet adding rudimentary IPv6 support and the tests themselves which were separate Python files that made use of the framework. The test framework was not part of my initial plan for the project, but I successfully implemented an IPv6 wrapper for Mininet.
 
 \bigskip
 
@@ -900,7 +900,7 @@ The hardest part of implementing Luxing was working out which linux commands and
 \section{Software Engineering}
 \label{sec::soft_eng}
 
-Due to both the nature of my project - having to produce a functioning router - and my own personal goals - wanting to learn useful real world skills - I was extremely aware of how I was applying software engineering techniques throughout.
+Due to both the nature of my project - having to produce a functioning router - and my own personal goals - wanting to learn useful real world skills - I was extremely aware of how I was applying software engineering techniques throughout.  I successfully applied theoretical knowledge from the Part 1A Software \& Security Engineering course.
 
 \bigskip
 
@@ -1072,7 +1072,7 @@ Another thing I would have done differently is increasing the amount of realisti
 
 \bigskip
 
-That said I am very happy with what I achieved in my project. I have certainly learnt a lot about professionalism and software engineering, and believe it will set me up well for the future.
+That said I am very happy with what I achieved in my project. I have certainly learnt a lot about professionalism and software engineering, and believe it will set me up well for the future. 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % the bibliography
