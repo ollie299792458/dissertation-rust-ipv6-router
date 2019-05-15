@@ -1,5 +1,5 @@
 % Template for a Computer Science Tripos Part II project dissertation
-\documentclass[12pt,a4paper,twoside,openright]{report}
+\documentclass[12pt,a4paper,twoside,openany]{report}
 \usepackage[pdfborder={0 0 0}]{hyperref}    % turns references into hyperlinks
 \usepackage[margin=25mm]{geometry}  % adjusts page layout
 \usepackage{graphicx}  % allows inclusion of PDF, PNG and JPG images
@@ -177,7 +177,7 @@ Rust\cite{rust} is a modern low level programming language that aims to match th
 Using the IPv6 standard as a framework, combined with some knowledge about the internals of routers, it is possible to develop an IPv6 router that is stable, small, simple, \& fast.  Such a router could continue to be developed until it was ready to be deployed on actual hardware, but the implementation and testing required mean this was not an objective of this project.  Instead, the aim is to develop a router that implements a sub-set of the IPv6 standard, hopefully including everything an IPv6 router is required by the standards to implement.  In the remainder of this dissertation I will discuss the preparation, implementation, and evaluation of this project.
 
 \chapter{Preparation}
-\label{chap::preperation}
+\label{chap::preparation}
 
 First I completed research into three areas: IPv6, Rust, \& Mininet. I then began by annotating the IPv6 RFCs\cite{ipv6_rfc}\cite{ipv6_rfc_adr}\cite{icmpv6_rfc} to divide my implementation into a minimal core and optional extensions. Next I designed a framework in which these could be implemented, and developed a test plan to enable effective evaluation of the finished product.
 
@@ -329,7 +329,7 @@ ICMPv6 is \textit{needed} for any IPv6 router.  However, the basic functionality
 
 \bigskip
 
-Additionally I thought about what my project did not need to do. I have already discussed briefly in my \hyperref[chap::introduction]{Introduction} that I did not want to Luyou to be run on actual hardware, as this would add needless complexity when my aim is to explore and illuminate the IPv6 requirements. 
+Additionally I thought about what my project did not need to do. I have already discussed briefly in chapter \ref{chap::introduction}\hyperref[chap::introduction]{ - Introduction} that I did not want to Luyou to be run on actual hardware, as this would add needless complexity when my aim is to explore and illuminate the IPv6 requirements. 
 
 For the sake of limiting the core part of the project to something that could be implemented in the time available, I also removed any features that were experimental or not in general use in IPv6 networking.  This included cross-layer optimisations.
 
@@ -467,7 +467,7 @@ With requirements and a design of Luyou completed, I needed to plan how I was go
 
 \bigskip
 
-I planned to make Luxing from Mininet and a couple of helper applications (either written in Python or Rust).  Some helper applications would be capable of sending packets with specific properties, and outputting any packets they received. Other helper applications would do more complicated end to end testing, such as running a web server and requesting web pages.  Unfortunately I found Mininet's IPv6 support was far less complete than I had believed, although the underlying Linux abstractions used by Mininet supported IPv6, Mininet itself did not allocate IPv6 addresses, enable IPv6 on nodes, or provide a way to remove IPv4 addresses from nodes.  I faced either writing my own network emulation environment from scratch, or developing some kind of modification or wrapper for Mininet.  I chose to focus on a wrapper that would intercept the Mininet functions I needed to use, and then modify the network environment created by Mininet to work with IPv6. Details of this wrapper can be found in \ref{chap::implementation}\hyperref[chap::implementation]{ Implementation}.
+I planned to make Luxing from Mininet and a couple of helper applications (either written in Python or Rust).  Some helper applications would be capable of sending packets with specific properties, and outputting any packets they received. Other helper applications would do more complicated end to end testing, such as running a web server and requesting web pages.  Unfortunately I found Mininet's IPv6 support was far less complete than I had believed, although the underlying Linux abstractions used by Mininet supported IPv6, Mininet itself did not allocate IPv6 addresses, enable IPv6 on nodes, or provide a way to remove IPv4 addresses from nodes.  I faced either writing my own network emulation environment from scratch, or developing some kind of modification or wrapper for Mininet.  I chose to focus on a wrapper that would intercept the Mininet functions I needed to use, and then modify the network environment created by Mininet to work with IPv6. Details of this wrapper can be found in chapter \ref{chap::implementation}\hyperref[chap::implementation]{ - Implementation}.
 
 \bigskip
 
@@ -485,7 +485,7 @@ When formalising the results of my analysis into a list of tests there were two 
 To avoid all the tests being dependent on an almost complete implementation of Luyou I implemented my test progressively so that tests could be run at the point of implementation of a feature. If we return to the example hop limit given above, Luyou should send an ICMPv6 \textit{Time Exceeded} message when a packet is dropped.  However, this would mean any test for hop limit decrement depends on a correct implementation of ICMPv6, as well as the correct implementation of hop limit decrement, so I instead only required a log message to verify success.  My numbering system matched my planned order of implementation so just reading off all the previous tests allowed me to know which features the next test is allowed to rely on.  
 
 \section{Professional Practice}
-This is a brief section on preparation related to professional skills and practice.  Two large aspects are testing and software engineering, both of which are explained in detail in the rest of \hyperref[chap::preparation]{Preparation} and in \hyperref[chap::implementation]{Implementation}.  
+This is a brief section on preparation related to professional skills and practice.  Two large aspects are testing and software engineering, both of which are explained in detail in the rest of this chapter (\ref{chap::preparation}\hyperref[chap::preparation]{ - Preparation}) and in the next chapter (\ref{chap::implementation}\hyperref[chap::implementation]{ - Implementation}).  
 
 \bigskip
 
@@ -606,9 +606,9 @@ Result<A,B> - Either Ok(A) or Err(B)
 
 \bigskip
 
-I planned to implement the following prototypes (these cover my basic core requirements and ICMPv6):
+I implemented the following prototypes in turn, each covers a larger subset of my requirements, with the final prototype covering all of my basic core requirements and ICMPv6:
 \begin{itemize}
-\item \textbf{Flooding:} Packets forwarded on all interfaces.
+\item \textbf{Flooding:} Packets forwarded on all interfaces - this confirms that the pnet and the skeleton framework work as expected.
 \item \textbf{Static Routing:} Packets forwarded on specific interfaces.
 \item \textbf{IPv6 validation:} Invalid IPv6 packets dropped and logged.
 \item \textbf{ICMPv6:} Invalid IPv6 packets responded to with ICMPv6 and echo request/reply implemented.
@@ -759,7 +759,7 @@ mtu1300@00:00:00:00:02:00
 
 \section{Test Bench}
 
-As outlined in \hyperref[chap::preparation]{Preparation} a key part of this project is the test bench (Luxing). Without Luxing it is impossible to verify that Luyou works as expected.  Below I go into detail about how I implemented Luxing, and issues I had.  Solving these issues involved a lot of trial and error, and I didn't have much experience with networking on Linux.  In the end Luxing took the form of a test framework (\verb!test_framework.py!) which wrapped around Mininet adding rudimentary IPv6 support and the tests themselves which were separate Python files that made use of the framework. The test framework was not part of my initial plan for the project.
+As outlined in chapter \ref{chap::preparation}\hyperref[chap::preparation]{ - Preparation} a key part of this project is the test bench (Luxing). Without Luxing it is impossible to verify that Luyou works as expected.  Below I go into detail about how I implemented Luxing, and issues I had.  Solving these issues involved a lot of trial and error, and I didn't have much experience with networking on Linux.  In the end Luxing took the form of a test framework (\verb!test_framework.py!) which wrapped around Mininet adding rudimentary IPv6 support and the tests themselves which were separate Python files that made use of the framework. The test framework was not part of my initial plan for the project.
 
 \bigskip
 
@@ -806,6 +806,25 @@ Luxing is run through a simple shell script - \verb!test.sh [Test/Requirement nu
 
 \bigskip
 
+Pass or failure of the test is verified by the user, the test will log the expected behaviour (e.g. "3 packets dropped, one received with the 4th octet being 7"), the user then reads the previous log messages to confirm this is the case. See \hyperref[fig::test_success]{Figure }\ref{fig::test_success} for an example.
+
+\begin{figure}
+\begin{verbatim}
+Luxingke - Client starting
+Packet(s) sent
+Packet dropped, hop limit, and imcpv6 response sent
+Packet dropped, hop limit, and imcpv6 response sent
+fc00::1:[96, 0, 0, 0, 0, 0, 59, 9, 252, 0, ...]
+fc00::1:[96, 0, 0, 0, 0, 0, 59, 1, 252, 0, ...]
+Test completed: if two packets dropped due to hop limit then two with 9 
+    and 1 as 8th octect, then success
+\end{verbatim}
+\caption{Test Example: Log output and success state}
+\label{fig::test_success}
+\end{figure}
+
+\bigskip
+
 The first issue I faced was getting Luxing to allocate IPv6 addresses to nodes. This was eventually resolved by having creating the \verb!__add_ipv6_address! method which runs \verb!ifconfig [interface-name] inet6 add [address]! and then calling it every time a node was added. Luxing then stores the node name and IPv6 address in a two way map, allowing it to easily find the addresses later. Luxing does not support auto allocating IPv6 addresses - you need to specify an address when you create a node - unlike Mininet which allows IPv4 nodes to be created without an address being specified.
 
 \bigskip
@@ -814,7 +833,20 @@ Mininet links nodes with \textit{Veth} (Virtual Ethernet) links. However, this d
 
 \bigskip
 
-Another issue was adding the default route to all nodes, I discovered this when implementing the flooding Ethernet repeater version of Luyou.  I'm unsure exactly why, but, without the default route set to point to the router \verb!ping6! would not work. This is easily achievable using the \verb!ip -6 route add default via [default-address] src [node-address]! command, but this seem didn't work.  This is because when allocated in Linux IPv6 addresses take a while before shifting to the ``\verb!UP!'' state.  Once I had discovered this I added a loop that slept for 100 milliseconds while the output of \verb!ip -6 addr! contained ``\verb!TENTATIVE!'' before trying to update the default route, this fixed the issue.  The default routes can also be seen in \hyperref[fig::test_network]{Figure }\ref{fig::test_network}.
+Another issue was adding the default route to all nodes, I discovered this when implementing the flooding Ethernet repeater version of Luyou.  I'm unsure exactly why, but, without the default route set to point to the router \verb!ping6! would not work. This is easily achievable using the \verb!ip -6 route add default via [default-address] src [node-address]! command, but this seem didn't work.  This is because when allocated in Linux IPv6 addresses take a while before shifting to the ``\verb!UP!'' state.  Once I had discovered this I added a loop that slept for 100 milliseconds while the output of \verb!ip -6 addr! contained ``\verb!TENTATIVE!'' before trying to update the default route, this fixed the issue, this can be seen in \hyperref[fig::tentative]{Figure }\ref{fig::tentative}.  The default routes can also be seen in \hyperref[fig::test_network]{Figure }\ref{fig::test_network}.
+
+
+\begin{figure}
+\begin{lstlisting}[language=Python]
+def __add_default_route(self, node, gateway_address):
+        while "tentative" in node.cmd("ip -6 addr"):
+            sleep(0.1)
+        node.cmd("ip -6 route add default via " + gateway_address 
+                 +" src "+self.address(node.name))
+\end{lstlisting}
+\caption{Waiting for IPv6 addresses to be up before updating default route}
+\label{fig::tentative}
+\end{figure}
 
 \bigskip
 
@@ -839,11 +871,13 @@ Due to both the nature of my project - having to produce a functioning router - 
 
 \bigskip
 
-Overall I began by creating a complete list of requirements, then a complete design, then I implemented my router, and then finally I ran all my tests on it.  This is very similar to the \textit{Waterfall} methodology.  This was appropriate (compared to more flexible software engineering methodologies) as my requirements were well defined by RFCs. This meant that I did not need to explore and refine requirements as my development progressed, as would be necessary if I was reacting to user feedback or my own improved understanding of a problem.
+Overall I began by creating a complete list of requirements, then a complete design (as described in chapter \ref{chap::preparation}\hyperref[chap::preparation]{ - Preparation}), then I implemented my router, and then finally I ran all my tests on it.  This is very similar to the \textit{Waterfall} methodology.  This was appropriate (compared to more flexible software engineering methodologies) as my requirements were well defined by RFCs. This meant that I did not need to explore and refine requirements as my development progressed, as would be necessary if I was reacting to user feedback or my own improved understanding of a problem.
 
 \bigskip
 
-However, I didn't strictly follow the Waterfall methodology as it was not particularly appropriate or sensible to complete the implementation stage as one large chunk.  Instead I completed several prototypes, each implementing a larger set of the requirements than the last (Flooding, Static Routing, IPv6 Validation, \& ICMPv6 - see \ref{sec::router}\hyperref[sec::router]{-Router} for more details). For each of these stages I first tweaked and refined the requirements (partly based on the successes and failings of the last stage), and at the end of each iteration I would produce a more complete prototype, this is similar to the \textit{Spiral} software development methodology. Doing all of the implementation in one would have prevented me from effectively testing parts of the router independently from each other, making the final testing much more complex.
+However, I didn't strictly follow the Waterfall methodology as it was not particularly appropriate or sensible to complete the implementation stage as one large chunk.  Instead I completed several prototypes, each implementing a larger set of the requirements than the last (Flooding, Static Routing, IPv6 Validation, \& ICMPv6 - see section \ref{sec::router}\hyperref[sec::router]{ - Router} for more details). 
+
+For each of these stages I first tweaked and refined the requirements (partly based on the successes and failings of the last stage), and at the end of each iteration I would produce a more complete prototype, this is similar to the \textit{Spiral} software development methodology. Doing all of the implementation in one would have prevented me from effectively testing parts of the router independently from each other, making the final testing much more complex.
 
 \bigskip
 
@@ -851,11 +885,11 @@ Every time I implemented an individual requirement I would write tests for that 
 
 \chapter{Evaluation}
 
-Evaluating Luyou was relatively complex. Working from the tests I had written and that Luyou passed was relatively easy.  However working out how this fit in relation to the real world was challenging and analysing the success and failure of my project relative to my original goals was challenging. Details on how to build and run my project can be found in the \verb!README.md! file in the root directory of my project. 
+Evaluating Luyou was relatively complex. Working from the tests I had written and that Luyou passed was relatively easy.  My goal was to pass my tests, so verifying I met my goals was also quite easy.  However verifying my tests matched up to the IPv6 requirements was more complex. Full details on how to build and run my project can be found in the \verb!README.md! file in the root directory of my project. 
 
 \section{Tests}
 
-As I have already mentioned, I wrote many individual tests on Luxing (my test bench) as I was implementing each requirement.  Due to this, when it came to testing Luyou I merely needed to run all the tests and every requirement would be checked.
+As I have already mentioned, I wrote 9 individual requirement tests on Luxing (my test bench) as I was implementing each requirement.  Due to this, when it came to testing Luyou I merely needed to run all the tests and every requirement would be checked.
 
 \bigskip
 
@@ -867,11 +901,22 @@ An example of a test would be test 11212 which is testing for the correct hop li
 
 \bigskip
 
-Some of the tests defined at the requirements stage should fail on the final build of Luyou, this is because the requirement are obsoleted. Earlier I talked about how ICMPv6 being implemented would obsolete tests that rely on log output for invalid packets (as an ICMPv6 message is sent instead). However in reality I left those log messages in, allowing the original test to be used, to reduce the amount of test reworking that needed to be done for the newer ICMPv6 case.  That said, there is an example of an obsolete requirement, the test for flooding was removed, due to it being superseded by static routing. 
-
-\bigskip
-
-To conclude, apart from the issues explained in the next section, my tests verify that I met my goals.  My goal was to implement a router that satisfied all my core requirements, and although I didn't implement all of these, for those I did implement the tests effectively verify that I met them successfully.  Overall I implemented 10 tests, with each sending and receiving between 1-5 packets. Most importantly for me however, implementing these tests taught me a lot, and I certainly feel better prepared when I have to test something extensively in future.
+To conclude, apart from the issues explained in the next section, my tests verify that I met my goals.  My goal was to implement a router that satisfied all my core requirements, and although I didn't implement all of these, for those I did implement the tests effectively verify that I met them successfully.  Overall I implemented 11 tests (9 of which were requirements tests), with each sending and receiving between 1-5 packets. 
+\begin{itemize}
+\item example: Pings between all nodes.
+\item 1112: Pings from left and right nodes.
+\item 11211: Tests IPv6 payload\_length, sends two packets
+\item 11212: Tests IPv6 hop\_limit, sends 4 packets \hyperref[fig::test_success]{Figure }\ref{fig::test_network}.
+\item 1211: Test ICMPv6 checksum, sends two packets
+\item 1212: T
+\item 1213
+\item 1214
+\item 1215
+\item 1216
+\item 1217
+\item playground
+\end{itemize}
+Most importantly for me however, implementing these tests taught me a lot, and I certainly feel better prepared when I have to test something extensively in future.
 
 \section{Issues and Observations}
 
@@ -879,7 +924,7 @@ As with almost all projects, my project didn't go completely smoothly. I had man
 
 \bigskip
 
-As discussed in \hyperref[chap::preparation]{Preparation} when I wrote my project proposal I believed Mininet supported IPv6 with minimal or no changes.  I discovered this was not the case when I started implementing Luyou.  In reality Mininet only supports IPv6 insofar as any generic Ethernet network supports IPv6, you can send IPv6 packets over the network, but it won't easily setup addressing at each node for you.  Obviously addressing at Luyou's node was handled by Luyou, but each node still needed to be allocated an address. 
+As discussed in chapter \ref{chap::preparation}\hyperref[chap::preparation]{ - Preparation} when I wrote my project proposal I believed Mininet supported IPv6 with minimal or no changes.  I discovered this was not the case when I started implementing Luyou.  In reality Mininet only supports IPv6 insofar as any generic Ethernet network supports IPv6, you can send IPv6 packets over the network, but it won't easily setup addressing at each node for you.  Obviously addressing at Luyou's node was handled by Luyou, but each node still needed to be allocated an address. 
 
 Allocating these addresses and setting up an IPv6 network took a long time, as it was very difficult to test.  This was partly because I wasn't particularly knowledgeable in this area, and I was learning a lot about Linux networking and networking tools as I was going along. It was also because all the issues I was facing were as a result of multiple variables interacted (interface configuration, router configuration, Python configuration, environment variables configuration), and it was very hard to work out which one was wrong.  
 
