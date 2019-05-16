@@ -1,5 +1,5 @@
 # Software IPv6 Router in Rust 
-*Using Mininet for University of Cambridge Part II (3rd Year) Dissertation*
+*University of Cambridge Part II (3rd Year) Dissertation*
 
 The router itself is called Luyou, and the test framework Luxing, with a test client called Luxingke and test server called Luxingfu.
 
