@@ -1,19 +1,19 @@
 \addvspace {10\p@ }
 \addvspace {10\p@ }
-\contentsline {figure}{\numberline {2.1}{\ignorespaces IPv6 Header Format\cite {ipv6_rfc}}}{12}{figure.2.1}
-\contentsline {figure}{\numberline {2.2}{\ignorespaces Requirements from \hyperref [appendix::requirements]{Appendix A} by type of functionality}}{14}{figure.2.2}
-\contentsline {figure}{\numberline {2.3}{\ignorespaces Router Design: Control plane and forwarding frame with forwarding fabric}}{17}{figure.2.3}
-\contentsline {figure}{\numberline {2.4}{\ignorespaces Layer Separation}}{18}{figure.2.4}
+\contentsline {figure}{\numberline {2.1}{\ignorespaces IPv6 Header Format\cite {ipv6_rfc}}}{11}{figure.2.1}
+\contentsline {figure}{\numberline {2.2}{\ignorespaces Requirements from \hyperref [appendix::requirements]{Appendix A} by type of functionality}}{13}{figure.2.2}
+\contentsline {figure}{\numberline {2.3}{\ignorespaces Router Design: Control plane and forwarding frame with forwarding fabric}}{16}{figure.2.3}
+\contentsline {figure}{\numberline {2.4}{\ignorespaces Layer Separation}}{17}{figure.2.4}
 \addvspace {10\p@ }
-\contentsline {figure}{\numberline {3.1}{\ignorespaces Repository Overview}}{22}{figure.3.1}
-\contentsline {figure}{\numberline {3.2}{\ignorespaces Implementation Overview: Data structures and threads}}{24}{figure.3.2}
-\contentsline {figure}{\numberline {3.3}{\ignorespaces Code excerpt: Starting a transmitting thread, returning a thread safe pipe}}{26}{figure.3.3}
-\contentsline {figure}{\numberline {3.4}{\ignorespaces Code excerpt: Ethernet layer calling IPv6 layer}}{28}{figure.3.4}
-\contentsline {figure}{\numberline {3.5}{\ignorespaces Static addressing configuration file format}}{29}{figure.3.5}
-\contentsline {figure}{\numberline {3.6}{\ignorespaces Test Network Topology: arrows in directions of default router}}{30}{figure.3.6}
-\contentsline {figure}{\numberline {3.7}{\ignorespaces Test Example: Log output and success state}}{31}{figure.3.7}
-\contentsline {figure}{\numberline {3.8}{\ignorespaces Waiting for IPv6 addresses to be up before updating default route}}{31}{figure.3.8}
+\contentsline {figure}{\numberline {3.1}{\ignorespaces Repository Overview}}{21}{figure.3.1}
+\contentsline {figure}{\numberline {3.2}{\ignorespaces Implementation Overview: Data structures and threads}}{23}{figure.3.2}
+\contentsline {figure}{\numberline {3.3}{\ignorespaces Code excerpt: Starting a transmitting thread, returning a thread safe pipe}}{25}{figure.3.3}
+\contentsline {figure}{\numberline {3.4}{\ignorespaces Code excerpt: Ethernet layer calling IPv6 layer}}{27}{figure.3.4}
+\contentsline {figure}{\numberline {3.5}{\ignorespaces Static addressing configuration file format}}{28}{figure.3.5}
+\contentsline {figure}{\numberline {3.6}{\ignorespaces Test Network Topology: arrows in directions of default router}}{29}{figure.3.6}
+\contentsline {figure}{\numberline {3.7}{\ignorespaces Test Example: Log output and success state}}{30}{figure.3.7}
+\contentsline {figure}{\numberline {3.8}{\ignorespaces Waiting for IPv6 addresses to be up before updating default route}}{30}{figure.3.8}
 \addvspace {10\p@ }
-\contentsline {figure}{\numberline {4.1}{\ignorespaces Requirements by implementation and test status}}{37}{figure.4.1}
+\contentsline {figure}{\numberline {4.1}{\ignorespaces Requirements by implementation and test status}}{36}{figure.4.1}
 \addvspace {10\p@ }
 \addvspace {10\p@ }
