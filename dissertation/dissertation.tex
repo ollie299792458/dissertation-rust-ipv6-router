@@ -1,4 +1,5 @@
-% Template for a Computer Science Tripos Part II project dissertation
+% Software IPv6 Router in Rust - Computer Science Tripos Part II project dissertation
+% Copyright Oliver Black 2018-19
 \documentclass[12pt,a4paper,twoside,openany]{report}
 \usepackage[pdfborder={0 0 0}]{hyperref}    % turns references into hyperlinks
 \usepackage[margin=25mm]{geometry}  % adjusts page layout
@@ -103,7 +104,7 @@ Candidate Number:          & \bf 2340C                      \\
 Project Title:             & \bf Software IPv6 Router in Rust \\
 Tripos:                    & \bf Computer Science Tripos  \\
 Examination:               & \bf Part II Dissertation, July 2019  \\
-Word Count (dissertation): & \bf 11675\footnotemark[1]  \\
+Word Count (dissertation): & \bf 11092\footnotemark[1]  \\
 Line Count (software):     & \bf 1998\footnotemark[2] \\
 Project Originator:        & \bf The Dissertation Author \& Richard Watts \\
 Project Supervisor:        & \bf Andrew Moore \\
@@ -388,9 +389,9 @@ The first was the separation of the control and forwarding plane. The control pl
 
 For static addressing, the forwarding plane only requires read-only access to the routing table. However for DHCPv6 or SLAAC the forwarding plane would need to be able to trigger modifications of the routing rules in the control plane. 
 
-The forwarding plane also contains the \textit{forwarding fabric} which is the complete collection of all possible paths packets can take between interfaces.  At runtime the specific path to be taken is determined by consulting the routing table.
+The forwarding plane itself is made up of a receiving thread for each interface. All of the receiving threads have access to a map of hardware (MAC) addresses to transmitting channels (one for each interface), this is the \textit{forwarding fabric}. This map is given to each receiving thread on creation.  Each MAC address is mapped to the transmit channel for that MAC address. 
 
-The forwarding plane itself is made up of a receiving thread for each interface. All of the receiving threads have access to a map of hardware (MAC) addresses to transmitting channels (one for each interface), this is the forwarding fabric. This map is given to each receiving thread on creation.  Each MAC address is mapped to the transmit channel for that MAC address. 
+The forwarding fabric is the complete collection of all possible paths packets can take between interfaces.  At runtime the specific path to be taken is determined by consulting the routing table. The receiving thread then forwards the packet along that specific path, and it is transmitted by the correct interface.
 
 For an overview see \hyperref[fig::router_design]{Figure }\ref{fig::router_design}.
 
@@ -434,7 +435,7 @@ node [near end, transform canvas={xshift=-16mm}] {Routing Table}
 \node [right=of midr, text width = 2cm, align=center, transform canvas={xshift=-1cm}] (llbl) {Transmitting Channels};
 
 \end{tikzpicture}
-\caption{Router Design: Control plane and forwarding frame with forwarding fabric}
+\caption{Router Design: Control plane with routing table and forwarding plane with forwarding fabric}
 \label{fig::router_design}
 \end{figure}
 
@@ -561,7 +562,7 @@ See \hyperref[fig::repository_overview]{Figure }\ref{fig::repository_overview} f
 │   │   ├── test_framework.py *Mininet wrapper*
 │   │   ├── test_playground.py 
 │   │   └── test_tw_example.py *example Mininet application from
-│   │                           documentation*
+│   │                           documentation [19]*
 │   └── __init__.py
 ├── rust
 │   ├── luxingfu
@@ -669,7 +670,7 @@ Finally I needed a representation for the different types of packets I would be 
 
 \bigskip
 
-Then I implemented the threads that make up the forwarding fabric.  A network interface in pnet is made up of a channel - a sender receiver pair (\verb!(DataLinkReceiver, DataLinkSender!). I set up a skeleton receiving thread for each receiver, and created a map of MAC addresses to transmitters (\verb!HashMap<MacAddr, DataLinkSender>!).  I then shared this map with the receiving threads. The map didn't change so it could be safely copied across threads. See \hyperref[fig::sending]{Figure }\ref{fig::sending} for the code excerpt that creates channels.
+Then I implemented the threads that make up the forwarding fabric.  A network interface in pnet is made up of a channel - a sender receiver pair (\verb!(DataLinkReceiver, DataLinkSender!). I set up a skeleton receiving thread for each receiver, and created a map of MAC addresses to transmitters (\verb!HashMap<MacAddr, DataLinkSender>!).  I then shared this map with the receiving threads. The map didn't change so it could be safely copied across threads. See \hyperref[fig::sending]{Figure }\ref{fig::sending} for the code excerpt that creates sending thread safe channels and starts the sending threads, the receiving channels are created in a similar way.
 
 Unfortunately the channel type used by pnet does not support being shared across threads (and this is enforced by the Rust type system).  So instead I had to have one additional thread for each transmitting pipe, with another thread safe pipe receiver associated with each transmitting thread, and all the corresponding transmitting thread safe pipes in the map (\verb!HashMap<MacAddr, Sender<EthernetPacket>>!).
 
