@@ -41,6 +41,9 @@ case $1 in
     1217)
         python -m python.luxing.test_1217
         ;;
+    web)
+        python -m python.luxing.test_web_server
+        ;;
     ex) #example test of ipv6 wrapper
         python -m python.luxing.test_example
         ;;

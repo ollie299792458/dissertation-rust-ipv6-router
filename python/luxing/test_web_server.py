@@ -56,7 +56,13 @@ def run():
 
     time.sleep(1)
 
-    left.cmdPrint("ping6 "+router_address);
+    server_process = left.popen([sys.executable, "-m", "python.luxing.my_simple_http_server", left_address, "8000"], stdout=sys.stdout, stderr=sys.stdout,
+                                      shell=True)
+
+    time.sleep(1)
+
+    client_process = right.cmdPrint("curl --interface "+right_address+" -g -6 \"http://["+left_address+"]:8000/\"")
+    time.sleep(1)
 
     info('Example test completed\n')
     server_process.kill()
