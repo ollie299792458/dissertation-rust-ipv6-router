@@ -10,7 +10,7 @@ Build the router (under ./rust/router)
 Run ./test.sh
 This will run the test in ./python/test/test_playground.py
 
-Please note that [Mininet]{http://mininet.org} must be installed for the test bench to run, but is not required by the router itself.
+Please note that [Mininet](http://mininet.org) must be installed for the test bench to run, but is not required by the router itself.
 
 If you have any questions please email: ollie@ollie299792458.co.uk
 
