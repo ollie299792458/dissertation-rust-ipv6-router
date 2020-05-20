@@ -1,3 +1,5 @@
+The following license does not cover Oliver Black's dissertation or any other files in the ./dissertation directory.
+
 Software IPv6 Router in Rust, Copyright 2018- 2019 Oliver Black
 
     Software IPv6 Router in Rust is free software: you can redistribute it and/or modify
